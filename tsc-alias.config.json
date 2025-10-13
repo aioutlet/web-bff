@@ -1,0 +1,14 @@
+{
+  "resolveFullPaths": true,
+  "replacers": {
+    "@/*": "dist/*",
+    "@config/*": "dist/config/*",
+    "@middleware/*": "dist/middleware/*",
+    "@clients/*": "dist/clients/*",
+    "@aggregators/*": "dist/aggregators/*",
+    "@routes/*": "dist/routes/*",
+    "@services/*": "dist/services/*",
+    "@types/*": "dist/types/*",
+    "@utils/*": "dist/utils/*"
+  }
+}
