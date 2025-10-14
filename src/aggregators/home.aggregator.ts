@@ -18,6 +18,10 @@ export interface EnrichedCategory extends TrendingCategory {
   displayName: string;
   description: string;
   image: string;
+  department: string;
+  categoryName: string;
+  accurateCount: number;
+  path: string;
 }
 
 export class HomeAggregator {
@@ -52,8 +56,12 @@ export class HomeAggregator {
         return [];
       }
 
-      // Enrich categories with display information
-      return categories.map((category) => this.enrichCategory(category));
+      // Enrich categories with display information and accurate counts
+      const enrichedCategories = await Promise.all(
+        categories.map(async (category) => await this.enrichCategory(category))
+      );
+
+      return enrichedCategories;
     } catch (error) {
       logger.error('Error getting trending categories', { error });
       throw error;
@@ -73,9 +81,31 @@ export class HomeAggregator {
   }
 
   /**
-   * Enrich category with display metadata
+   * Enrich category with display metadata and accurate product count
    */
-  private enrichCategory(category: TrendingCategory): EnrichedCategory {
+  private async enrichCategory(category: TrendingCategory): Promise<EnrichedCategory> {
+    // Map category names to department, category, and path
+    // Based on actual product database structure
+    const categoryRoutes: Record<
+      string,
+      { department: string; categoryName: string; path: string }
+    > = {
+      Clothing: { department: 'Women', categoryName: 'Clothing', path: '/women/clothing' },
+      Accessories: { department: 'Women', categoryName: 'Accessories', path: '/women/accessories' },
+      Apparel: { department: 'Sports', categoryName: 'Apparel', path: '/sports/apparel' },
+      Footwear: { department: 'Kids', categoryName: 'Footwear', path: '/kids/footwear' },
+      Mobile: { department: 'Electronics', categoryName: 'Mobile', path: '/electronics/mobile' },
+      Audio: { department: 'Electronics', categoryName: 'Audio', path: '/electronics/audio' },
+      Computers: {
+        department: 'Electronics',
+        categoryName: 'Computers',
+        path: '/electronics/computers',
+      },
+      Gaming: { department: 'Electronics', categoryName: 'Gaming', path: '/electronics/gaming' },
+      Fiction: { department: 'Books', categoryName: 'Fiction', path: '/books/fiction' },
+      Nonfiction: { department: 'Books', categoryName: 'Nonfiction', path: '/books/nonfiction' },
+    };
+
     // Map category names to display names and images
     const categoryMetadata: Record<
       string,
@@ -149,9 +179,31 @@ export class HomeAggregator {
       image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
     };
 
+    // Get routing information for this category
+    const route = categoryRoutes[category.name];
+
+    // Fetch accurate product count for the specific department+category combination
+    let accurateCount = category.product_count; // Fallback to original count
+    if (route) {
+      try {
+        accurateCount = await productClient.getProductCount(route.department, route.categoryName);
+      } catch (error) {
+        logger.warn(
+          `Failed to fetch accurate count for ${route.department}/${route.categoryName}`,
+          {
+            error,
+          }
+        );
+      }
+    }
+
     return {
       ...category,
       ...metadata,
+      department: route?.department || category.name,
+      categoryName: route?.categoryName || category.name,
+      accurateCount,
+      path: route?.path || `/products?category=${category.name}`,
     };
   }
 

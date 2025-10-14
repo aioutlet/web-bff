@@ -52,6 +52,13 @@ export class ProductClient extends BaseClient {
   async getCategories(): Promise<string[]> {
     return this.get<string[]>('/api/categories');
   }
+
+  async getProductCount(department: string, category: string): Promise<number> {
+    const response = await this.get<{ total_count: number; products: Product[] }>(
+      `/api/products/?department=${department}&category=${category}&limit=1`
+    );
+    return response.total_count || 0;
+  }
 }
 
 export const productClient = new ProductClient();
