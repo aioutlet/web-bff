@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import logger from '@utils/logger';
+import logger from '@observability';
 import { RequestWithCorrelationId } from './correlation-id.middleware';
 
 export const errorMiddleware = (

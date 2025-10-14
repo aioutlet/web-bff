@@ -29,7 +29,9 @@
       "@routes/*": ["src/routes/*"],
       "@services/*": ["src/services/*"],
       "@types/*": ["src/types/*"],
-      "@utils/*": ["src/utils/*"]
+      "@utils/*": ["src/utils/*"],
+      "@observability": ["src/observability"],
+      "@observability/*": ["src/observability/*"]
     }
   },
   "include": ["src/**/*"],

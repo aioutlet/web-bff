@@ -9,6 +9,8 @@
     "@routes/*": "dist/routes/*",
     "@services/*": "dist/services/*",
     "@types/*": "dist/types/*",
-    "@utils/*": "dist/utils/*"
+    "@utils/*": "dist/utils/*",
+    "@observability": "dist/observability",
+    "@observability/*": "dist/observability/*"
   }
 }

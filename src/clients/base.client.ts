@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import axiosRetry from 'axios-retry';
 import config from '@config/index';
-import logger from '@utils/logger';
+import logger from '@observability';
 
 export class BaseClient {
   protected client: AxiosInstance;
@@ -9,7 +9,7 @@ export class BaseClient {
 
   constructor(baseURL: string, serviceName: string) {
     this.serviceName = serviceName;
-    
+
     this.client = axios.create({
       baseURL,
       timeout: config.serviceConfig.timeout,

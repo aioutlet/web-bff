@@ -1,7 +1,7 @@
 import { productClient, Product, TrendingCategory } from '@clients/product.client';
 import { inventoryClient, InventoryItem } from '@clients/inventory.client';
 import { reviewClient, ReviewAggregate } from '@clients/review.client';
-import logger from '@utils/logger';
+import logger from '@observability';
 
 export interface EnrichedProduct extends Product {
   inventory: {
