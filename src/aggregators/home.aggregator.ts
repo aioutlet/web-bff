@@ -1,4 +1,4 @@
-import { productClient, Product } from '@clients/product.client';
+import { productClient, Product, TrendingCategory } from '@clients/product.client';
 import { inventoryClient, InventoryItem } from '@clients/inventory.client';
 import { reviewClient, ReviewAggregate } from '@clients/review.client';
 import logger from '@utils/logger';
@@ -12,6 +12,12 @@ export interface EnrichedProduct extends Product {
     averageRating: number;
     reviewCount: number;
   };
+}
+
+export interface EnrichedCategory extends TrendingCategory {
+  displayName: string;
+  description: string;
+  image: string;
 }
 
 export class HomeAggregator {
@@ -36,6 +42,25 @@ export class HomeAggregator {
   }
 
   /**
+   * Get trending categories with enriched display data
+   */
+  async getTrendingCategories(limit: number = 5): Promise<EnrichedCategory[]> {
+    try {
+      const categories = await productClient.getTrendingCategories(limit);
+
+      if (!categories || categories.length === 0) {
+        return [];
+      }
+
+      // Enrich categories with display information
+      return categories.map((category) => this.enrichCategory(category));
+    } catch (error) {
+      logger.error('Error getting trending categories', { error });
+      throw error;
+    }
+  }
+
+  /**
    * Get categories with product counts
    */
   async getCategories(): Promise<string[]> {
@@ -45,6 +70,89 @@ export class HomeAggregator {
       logger.error('Error getting categories', { error });
       throw error;
     }
+  }
+
+  /**
+   * Enrich category with display metadata
+   */
+  private enrichCategory(category: TrendingCategory): EnrichedCategory {
+    // Map category names to display names and images
+    const categoryMetadata: Record<
+      string,
+      { displayName: string; description: string; image: string }
+    > = {
+      Electronics: {
+        displayName: 'Tech essentials',
+        description: 'Latest gadgets and devices',
+        image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800',
+      },
+      Audio: {
+        displayName: 'Sound & music',
+        description: 'Headphones and speakers',
+        image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800',
+      },
+      Computers: {
+        displayName: 'Computing',
+        description: 'Laptops and desktops',
+        image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800',
+      },
+      Gaming: {
+        displayName: 'Gaming',
+        description: 'Consoles and accessories',
+        image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800',
+      },
+      Wearables: {
+        displayName: 'Wearables',
+        description: 'Smartwatches and fitness',
+        image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800',
+      },
+      Clothing: {
+        displayName: 'Style & trends',
+        description: 'Fashion and apparel',
+        image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=800',
+      },
+      Footwear: {
+        displayName: 'Footwear',
+        description: 'Shoes and sneakers',
+        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
+      },
+      Furniture: {
+        displayName: 'For your space',
+        description: 'Home and office furniture',
+        image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800',
+      },
+      'Home Appliances': {
+        displayName: 'Home essentials',
+        description: 'Kitchen and cleaning',
+        image: 'https://images.unsplash.com/photo-1585515320310-259814833e62?w=800',
+      },
+      Cameras: {
+        displayName: 'Photography',
+        description: 'Cameras and accessories',
+        image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800',
+      },
+      Tablets: {
+        displayName: 'Tablets',
+        description: 'iPads and tablets',
+        image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800',
+      },
+      Automotive: {
+        displayName: 'Automotive',
+        description: 'Car parts and accessories',
+        image: 'https://images.unsplash.com/photo-1562911791-c7a97b729ec5?w=800',
+      },
+    };
+
+    const metadata = categoryMetadata[category.name] || {
+      displayName: category.name,
+      description: `Browse ${category.name}`,
+      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800',
+    };
+
+    return {
+      ...category,
+      ...metadata,
+    };
   }
 
   /**

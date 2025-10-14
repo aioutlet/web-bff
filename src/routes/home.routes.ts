@@ -40,6 +40,40 @@ router.get('/trending', async (req: RequestWithCorrelationId, res: Response) => 
 });
 
 /**
+ * GET /api/home/trending-categories
+ * Get trending categories with metadata
+ */
+router.get('/trending-categories', async (req: RequestWithCorrelationId, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 5;
+
+    logger.info('Fetching trending categories', {
+      correlationId: req.correlationId,
+      limit,
+    });
+
+    const categories = await homeAggregator.getTrendingCategories(limit);
+
+    res.json({
+      success: true,
+      data: categories,
+    });
+  } catch (error) {
+    logger.error('Error in /api/home/trending-categories', {
+      correlationId: req.correlationId,
+      error,
+    });
+
+    res.status(500).json({
+      success: false,
+      error: {
+        message: 'Failed to fetch trending categories',
+      },
+    });
+  }
+});
+
+/**
  * GET /api/home/categories
  * Get product categories
  */

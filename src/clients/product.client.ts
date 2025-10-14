@@ -12,6 +12,21 @@ export interface Product {
   isActive: boolean;
 }
 
+export interface TrendingCategory {
+  name: string;
+  product_count: number;
+  in_stock_count: number;
+  avg_rating: number;
+  total_reviews: number;
+  trending_score: number;
+  featured_product: {
+    name: string;
+    price: number;
+    images: string[];
+    average_rating: number;
+  };
+}
+
 export class ProductClient extends BaseClient {
   constructor() {
     super(config.services.product, 'product-service');
@@ -23,6 +38,10 @@ export class ProductClient extends BaseClient {
 
   async getTrendingProducts(limit: number = 4): Promise<Product[]> {
     return this.get<Product[]>(`/api/products/trending?limit=${limit}`);
+  }
+
+  async getTrendingCategories(limit: number = 5): Promise<TrendingCategory[]> {
+    return this.get<TrendingCategory[]>(`/api/products/trending-categories?limit=${limit}`);
   }
 
   async getProductsByCategory(category: string, limit?: number): Promise<Product[]> {
