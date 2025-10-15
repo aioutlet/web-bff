@@ -183,7 +183,7 @@ router.get('/:id', async (req: RequestWithCorrelationId, res: Response) => {
     // Aggregate product with top reviews
     const product = await aggregateProductWithReviews(
       id,
-      req.correlationId,
+      req.correlationId || 'no-correlation',
       parseInt(reviewLimit as string, 10)
     );
 
@@ -231,7 +231,7 @@ router.get('/:id/reviews', async (req: RequestWithCorrelationId, res: Response) 
     // Fetch reviews for product
     const reviewData = await getProductReviews(
       id,
-      req.correlationId,
+      req.correlationId || 'no-correlation',
       parseInt(skip as string, 10),
       parseInt(limit as string, 10),
       sort as string

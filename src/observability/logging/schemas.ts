@@ -79,7 +79,7 @@ export const ENVIRONMENT_CONFIGS: Record<string, LoggerConfig> = {
   development: {
     ...DEFAULT_CONFIG,
     logLevel: 'DEBUG',
-    format: 'json',
+    format: 'console',
     enableFile: true,
     enableTracing: true,
   },
