@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import axios from 'axios';
 import logger from '@observability';
 import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { aggregateProductWithReviews, getProductReviews } from '@aggregators/product.aggregator';
 
 const router = Router();
 
@@ -166,28 +167,29 @@ router.get('/search', async (req: RequestWithCorrelationId, res: Response) => {
 
 /**
  * GET /api/products/:id
- * Get a single product by ID
+ * Get a single product by ID with top reviews
  */
 router.get('/:id', async (req: RequestWithCorrelationId, res: Response) => {
   try {
     const { id } = req.params;
+    const { reviewLimit = '5' } = req.query;
 
-    logger.info('Fetching product by ID', {
+    logger.info('Fetching product by ID with reviews', {
       correlationId: req.correlationId,
       productId: id,
+      reviewLimit,
     });
 
-    // Call product-service
-    const response = await axios.get(`${PRODUCT_SERVICE_URL}/api/products/${id}`, {
-      headers: {
-        'X-Correlation-Id': req.correlationId,
-      },
-      timeout: 5000,
-    });
+    // Aggregate product with top reviews
+    const product = await aggregateProductWithReviews(
+      id,
+      req.correlationId,
+      parseInt(reviewLimit as string, 10)
+    );
 
     res.json({
       success: true,
-      data: response.data,
+      data: product,
     });
   } catch (error) {
     logger.error('Error in /api/products/:id', {
@@ -203,6 +205,56 @@ router.get('/:id', async (req: RequestWithCorrelationId, res: Response) => {
       success: false,
       error: {
         message: 'Failed to fetch product',
+        details: axios.isAxiosError(error) ? error.response?.data : undefined,
+      },
+    });
+  }
+});
+
+/**
+ * GET /api/products/:id/reviews
+ * Get all reviews for a product with pagination
+ */
+router.get('/:id/reviews', async (req: RequestWithCorrelationId, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { skip = '0', limit = '20', sort = 'recent' } = req.query;
+
+    logger.info('Fetching product reviews', {
+      correlationId: req.correlationId,
+      productId: id,
+      skip,
+      limit,
+      sort,
+    });
+
+    // Fetch reviews for product
+    const reviewData = await getProductReviews(
+      id,
+      req.correlationId,
+      parseInt(skip as string, 10),
+      parseInt(limit as string, 10),
+      sort as string
+    );
+
+    res.json({
+      success: true,
+      data: reviewData,
+    });
+  } catch (error) {
+    logger.error('Error in /api/products/:id/reviews', {
+      correlationId: req.correlationId,
+      productId: req.params.id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    const status =
+      axios.isAxiosError(error) && error.response?.status ? error.response.status : 500;
+
+    res.status(status).json({
+      success: false,
+      error: {
+        message: 'Failed to fetch product reviews',
         details: axios.isAxiosError(error) ? error.response?.data : undefined,
       },
     });
