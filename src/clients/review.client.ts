@@ -20,11 +20,18 @@ export class ReviewClient extends BaseClient {
   }
 
   async getProductReviews(productId: string): Promise<ReviewAggregate> {
-    return this.get<ReviewAggregate>(`/api/reviews/products/${productId}/aggregate`);
+    const response = await this.get<{ data: ReviewAggregate }>(
+      `/api/v1/reviews/products/${productId}/rating`
+    );
+    return response.data;
   }
 
   async getReviewsBatch(productIds: string[]): Promise<ReviewAggregate[]> {
-    return this.post<ReviewAggregate[]>('/api/reviews/batch/aggregate', { productIds });
+    const response = await this.post<{ data: ReviewAggregate[] }>(
+      '/api/v1/reviews/products/ratings/batch',
+      { productIds }
+    );
+    return response.data;
   }
 }
 

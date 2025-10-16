@@ -1,8 +1,10 @@
 import axios from 'axios';
 import logger from '@observability';
+import config from '@config/index';
+import { reviewClient } from '@clients/review.client';
 
-const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || 'http://localhost:8003';
-const REVIEW_SERVICE_URL = process.env.REVIEW_SERVICE_URL || 'http://localhost:8004';
+const REVIEW_SERVICE_URL = config.services.review;
+const PRODUCT_SERVICE_URL = config.services.product;
 
 interface ProductData {
   id: string;
@@ -20,8 +22,6 @@ interface ProductData {
   colors: string[];
   sizes: string[];
   specifications: Record<string, string>;
-  average_rating: number;
-  num_reviews: number;
   created_by: string;
   updated_by?: string;
   created_at: string;
@@ -314,16 +314,27 @@ export async function getProductRatingsBatch(
       throw new Error('Maximum 100 products per batch request');
     }
 
-    const response = await axios.post(
-      `${REVIEW_SERVICE_URL}/api/v1/reviews/products/ratings/batch`,
-      { productIds },
-      {
-        headers: { 'X-Correlation-Id': correlationId },
-        timeout: 5000,
-      }
-    );
+    const reviewData = await reviewClient.getReviewsBatch(productIds);
 
-    const ratings = response.data.data || [];
+    // Map ReviewAggregate to ProductRatingData
+    const ratings = reviewData.map((review) => ({
+      productId: review.productId,
+      averageRating: review.averageRating,
+      totalReviews: review.totalReviews,
+      ratingDistribution: review.ratingDistribution,
+      verifiedReviewsCount: 0, // Default value
+      qualityMetrics: {
+        averageHelpfulScore: 0,
+        totalHelpfulVotes: 0,
+        reviewsWithMedia: 0,
+        averageReviewLength: 0,
+      },
+      trends: {
+        last30Days: { totalReviews: 0, averageRating: 0 },
+        last7Days: { totalReviews: 0, averageRating: 0 },
+      },
+      lastUpdated: new Date().toISOString(),
+    }));
 
     logger.info('Successfully fetched product ratings batch', {
       correlationId,
@@ -395,8 +406,8 @@ export async function enhanceProductsWithRatings(
       ...product,
       ratingDetails: ratingMap[product.id] || {
         productId: product.id,
-        averageRating: product.average_rating || 0,
-        totalReviews: product.num_reviews || 0,
+        averageRating: 0,
+        totalReviews: 0,
         ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
         verifiedReviewsCount: 0,
         qualityMetrics: {
@@ -424,8 +435,8 @@ export async function enhanceProductsWithRatings(
       ...product,
       ratingDetails: {
         productId: product.id,
-        averageRating: product.average_rating || 0,
-        totalReviews: product.num_reviews || 0,
+        averageRating: 0,
+        totalReviews: 0,
         ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
         verifiedReviewsCount: 0,
         qualityMetrics: {

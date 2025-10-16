@@ -53,7 +53,7 @@ const config: Config = {
   services: {
     product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8003',
     inventory: process.env.INVENTORY_SERVICE_URL || 'http://localhost:8004',
-    review: process.env.REVIEW_SERVICE_URL || 'http://localhost:3002',
+    review: process.env.REVIEW_SERVICE_URL || 'http://localhost:3006',
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
     user: process.env.USER_SERVICE_URL || 'http://localhost:3000',
     cart: process.env.CART_SERVICE_URL || 'http://localhost:8006',

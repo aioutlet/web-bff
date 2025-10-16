@@ -2,7 +2,11 @@ import { Router, Response } from 'express';
 import axios from 'axios';
 import logger from '@observability';
 import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
-import { aggregateProductWithReviews, getProductReviews } from '@aggregators/product.aggregator';
+import {
+  aggregateProductWithReviews,
+  getProductReviews,
+  enhanceProductsWithRatings,
+} from '@aggregators/product.aggregator';
 
 const router = Router();
 
@@ -58,9 +62,19 @@ router.get('/', async (req: RequestWithCorrelationId, res: Response) => {
       timeout: 5000,
     });
 
+    // Enhance products with rating data from review service
+    const products = response.data.products || [];
+    const enhancedProducts = await enhanceProductsWithRatings(
+      products,
+      req.correlationId || 'no-correlation'
+    );
+
     res.json({
       success: true,
-      data: response.data,
+      data: {
+        ...response.data,
+        products: enhancedProducts,
+      },
     });
   } catch (error) {
     logger.error('Error in /api/products', {
@@ -142,9 +156,19 @@ router.get('/search', async (req: RequestWithCorrelationId, res: Response) => {
       }
     );
 
+    // Enhance products with rating data from review service
+    const products = response.data.products || [];
+    const enhancedProducts = await enhanceProductsWithRatings(
+      products,
+      req.correlationId || 'no-correlation'
+    );
+
     return res.json({
       success: true,
-      data: response.data,
+      data: {
+        ...response.data,
+        products: enhancedProducts,
+      },
     });
   } catch (error) {
     logger.error('Error in /api/products/search', {
