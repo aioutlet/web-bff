@@ -107,9 +107,11 @@ export class AdminDashboardAggregator {
       // Review service stats
       serviceCall({
         method: 'GET',
-        url: `${config.services.review}/api/admin/stats`,
+        url: `${config.services.review}/api/v1/reviews/admin/stats`,
         headers,
-      }).catch(() => ({ total: 0, pending: 0, averageRating: 0, growth: 0 })),
+      })
+        .then((response: any) => response.data || response) // Extract data field if wrapped
+        .catch(() => ({ total: 0, pending: 0, averageRating: 0, growth: 0 })),
     ]);
 
     // Aggregate the stats from different services
