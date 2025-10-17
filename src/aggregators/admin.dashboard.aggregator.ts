@@ -79,7 +79,7 @@ export class AdminDashboardAggregator {
       // User service stats
       serviceCall({
         method: 'GET',
-        url: `${config.services.user}/api/admin/stats`,
+        url: `${config.services.user}/api/admin/users/stats`,
         headers,
       }).catch(() => ({ total: 0, active: 0, newThisMonth: 0, growth: 0 })),
 
@@ -197,7 +197,7 @@ export class AdminDashboardAggregator {
 
     const recentUsers = await serviceCall({
       method: 'GET',
-      url: `${config.services.user}/api/admin/users/recent?limit=${limit}`,
+      url: `${config.services.user}/api/admin/users/list/recent?limit=${limit}`,
       headers,
     });
 
