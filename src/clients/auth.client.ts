@@ -143,6 +143,13 @@ export class AuthClient {
     return response.data;
   }
 
+  async verifyToken(token: string): Promise<any> {
+    const response = await this.client.get<any>('/api/auth/verify', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  }
+
   async verifyEmail(token: string): Promise<any> {
     const response = await this.client.get<any>('/api/auth/email/verify', {
       params: { token },

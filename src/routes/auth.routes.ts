@@ -169,6 +169,44 @@ router.get('/me', async (req: RequestWithCorrelationId, res: Response): Promise<
 });
 
 /**
+ * GET /api/auth/verify
+ * Verify JWT token (dedicated token verification endpoint)
+ */
+router.get('/verify', async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+
+    if (!token) {
+      res.status(401).json({
+        success: false,
+        error: { message: 'Authorization token required' },
+      });
+      return;
+    }
+
+    logger.info('Token verification attempt', {
+      correlationId: req.correlationId,
+    });
+
+    const data = await authClient.verifyToken(token);
+
+    res.json(data);
+  } catch (error: any) {
+    logger.error('Token verification error', {
+      correlationId: req.correlationId,
+      error: error.message,
+    });
+
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: {
+        message: error.response?.data?.message || 'Token verification failed',
+      },
+    });
+  }
+});
+
+/**
  * GET /api/auth/email/verify
  * Verify email with token
  */

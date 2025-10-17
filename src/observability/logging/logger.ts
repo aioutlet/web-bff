@@ -55,11 +55,6 @@ class Logger {
 
     // Initialize Winston logger
     this._initializeWinston();
-
-    // Log initialization (skip for test environment)
-    if (environment !== 'test') {
-      console.log('[LOGGER] ✅ Logger initialized');
-    }
   }
 
   /**
