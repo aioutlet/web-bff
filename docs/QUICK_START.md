@@ -35,16 +35,19 @@ The BFF service will start on `http://localhost:3100`
 ### 4. Test the API
 
 **Health Check:**
+
 ```bash
 curl http://localhost:3100/health
 ```
 
 **Get Trending Products (with aggregated data):**
+
 ```bash
 curl http://localhost:3100/api/home/trending
 ```
 
 **Get Categories:**
+
 ```bash
 curl http://localhost:3100/api/home/categories
 ```
@@ -55,7 +58,8 @@ curl http://localhost:3100/api/home/categories
 web-bff/
 ├── src/
 │   ├── aggregators/        # Data aggregation logic
-│   │   └── home.aggregator.ts
+│   │   ├── storefront.aggregator.ts
+│   │   └── admin.dashboard.aggregator.ts
 │   ├── clients/            # HTTP clients for backend services
 │   │   ├── base.client.ts
 │   │   ├── product.client.ts
@@ -156,6 +160,7 @@ All configuration is in `.env` file and `src/config/index.ts`.
 ## 🐛 Debugging
 
 Logs are written to:
+
 - Console (colorized in development)
 - `logs/web-bff.log` (all logs)
 - `logs/error.log` (errors only)
@@ -177,9 +182,11 @@ Each request has a correlation ID for tracing across services.
 Get trending products with aggregated inventory and review data.
 
 **Query Parameters:**
+
 - `limit` (optional): Number of products to return (default: 4)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -209,6 +216,7 @@ Get trending products with aggregated inventory and review data.
 Health check endpoint.
 
 **Response:**
+
 ```json
 {
   "success": true,

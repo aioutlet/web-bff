@@ -16,6 +16,7 @@ interface Config {
     user: string;
     cart: string;
     order: string;
+    admin: string;
   };
   serviceConfig: {
     timeout: number;
@@ -51,13 +52,14 @@ const config: Config = {
   host: process.env.HOST || 'localhost',
   allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   services: {
-    product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8003',
-    inventory: process.env.INVENTORY_SERVICE_URL || 'http://localhost:8004',
+    product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8000',
+    inventory: process.env.INVENTORY_SERVICE_URL || 'http://localhost:5000',
     review: process.env.REVIEW_SERVICE_URL || 'http://localhost:9001',
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
-    user: process.env.USER_SERVICE_URL || 'http://localhost:3000',
+    user: process.env.USER_SERVICE_URL || 'http://localhost:3002',
     cart: process.env.CART_SERVICE_URL || 'http://localhost:8006',
     order: process.env.ORDER_SERVICE_URL || 'http://localhost:5001',
+    admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:3010',
   },
   serviceConfig: {
     timeout: parseInt(process.env.SERVICE_TIMEOUT || '5000', 10),

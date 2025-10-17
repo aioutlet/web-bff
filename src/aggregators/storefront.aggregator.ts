@@ -24,7 +24,7 @@ export interface EnrichedCategory extends TrendingCategory {
   path: string;
 }
 
-export class HomeAggregator {
+export class StorefrontAggregator {
   /**
    * Get trending products with inventory and review data
    */
@@ -255,4 +255,4 @@ export class HomeAggregator {
   }
 }
 
-export const homeAggregator = new HomeAggregator();
+export const storefrontAggregator = new StorefrontAggregator();

@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { homeAggregator } from '@aggregators/home.aggregator';
+import { storefrontAggregator } from '@aggregators/storefront.aggregator';
 import logger from '@observability';
 import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
 
@@ -18,7 +18,7 @@ router.get('/trending', async (req: RequestWithCorrelationId, res: Response) => 
       limit,
     });
 
-    const products = await homeAggregator.getTrendingProducts(limit);
+    const products = await storefrontAggregator.getTrendingProducts(limit);
 
     res.json({
       success: true,
@@ -52,7 +52,7 @@ router.get('/trending-categories', async (req: RequestWithCorrelationId, res: Re
       limit,
     });
 
-    const categories = await homeAggregator.getTrendingCategories(limit);
+    const categories = await storefrontAggregator.getTrendingCategories(limit);
 
     res.json({
       success: true,
@@ -83,7 +83,7 @@ router.get('/categories', async (req: RequestWithCorrelationId, res: Response) =
       correlationId: req.correlationId,
     });
 
-    const categories = await homeAggregator.getCategories();
+    const categories = await storefrontAggregator.getCategories();
 
     res.json({
       success: true,
