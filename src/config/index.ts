@@ -58,7 +58,7 @@ const config: Config = {
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
     user: process.env.USER_SERVICE_URL || 'http://localhost:3002',
     cart: process.env.CART_SERVICE_URL || 'http://localhost:8006',
-    order: process.env.ORDER_SERVICE_URL || 'http://localhost:5001',
+    order: process.env.ORDER_SERVICE_URL || 'http://localhost:5088',
     admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:3010',
   },
   serviceConfig: {

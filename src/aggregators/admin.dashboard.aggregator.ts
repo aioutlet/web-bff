@@ -173,13 +173,34 @@ export class AdminDashboardAggregator {
       ...authHeaders,
     };
 
-    const recentOrders = await serviceCall({
-      method: 'GET',
-      url: `${config.services.order}/api/admin/orders/recent?limit=${limit}`,
-      headers,
-    });
+    try {
+      const response = await serviceCall({
+        method: 'GET',
+        url: `${config.services.order}/api/orders/paged?page=1&pageSize=${limit}`,
+        headers,
+      });
 
-    return recentOrders || [];
+      // Transform the paged response to recent orders format
+      if (response?.data) {
+        return response.data.map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+          totalAmount: order.totalAmount,
+          currency: order.currency,
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          createdAt: order.createdAt,
+          itemCount: order.items?.length || 0,
+        }));
+      }
+
+      return [];
+    } catch (error) {
+      logger.error('Failed to fetch recent orders', { error, correlationId });
+      return [];
+    }
   }
 
   /**
