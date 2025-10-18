@@ -58,6 +58,30 @@ export class ProductClient extends BaseClient {
     );
     return response.total_count || 0;
   }
+
+  // Admin methods
+  async getAllProducts(headers: Record<string, string>, params?: any): Promise<any> {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.get<any>(`/api/products${queryString}`, { headers });
+  }
+
+  async getProductById(productId: string, headers: Record<string, string>): Promise<any> {
+    return this.get<any>(`/api/products/${productId}`, { headers });
+  }
+
+  async createProduct(data: any, headers: Record<string, string>): Promise<any> {
+    return this.post<any>('/api/products', data, { headers });
+  }
+
+  async updateProduct(productId: string, data: any, headers: Record<string, string>): Promise<any> {
+    return this.client
+      .patch<any>(`/api/products/${productId}`, data, { headers })
+      .then((res) => res.data);
+  }
+
+  async deleteProduct(productId: string, headers: Record<string, string>): Promise<void> {
+    return this.delete<void>(`/api/products/${productId}`, { headers });
+  }
 }
 
 export const productClient = new ProductClient();

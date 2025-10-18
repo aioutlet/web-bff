@@ -260,4 +260,159 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Product Management Routes
+ */
+
+/**
+ * GET /api/admin/products
+ * Get all products with optional filtering and pagination
+ */
+router.get('/products', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { productClient } = await import('../clients/product.client');
+    const products = await productClient.getAllProducts(authHeaders, req.query);
+
+    res.json({
+      success: true,
+      data: products.products || [],
+      pagination: {
+        page: 1,
+        limit: req.query.limit || 20,
+        total: products.total_count || 0,
+        totalPages: Math.ceil((products.total_count || 0) / (Number(req.query.limit) || 20)),
+      },
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch products', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch products',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/products/:id
+ * Get product by ID
+ */
+router.get('/products/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { productClient } = await import('../clients/product.client');
+    const product = await productClient.getProductById(id, authHeaders);
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch product', { error, correlationId, productId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch product',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/products
+ * Create new product
+ */
+router.post('/products', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { productClient } = await import('../clients/product.client');
+    const product = await productClient.createProduct(req.body, authHeaders);
+
+    res.status(201).json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    logger.error('Failed to create product', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to create product',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/products/:id
+ * Update product
+ */
+router.patch('/products/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { productClient } = await import('../clients/product.client');
+    const product = await productClient.updateProduct(id, req.body, authHeaders);
+
+    res.json({
+      success: true,
+      data: product,
+    });
+  } catch (error: any) {
+    logger.error('Failed to update product', { error, correlationId, productId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to update product',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/products/:id
+ * Delete product
+ */
+router.delete('/products/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { productClient } = await import('../clients/product.client');
+    await productClient.deleteProduct(id, authHeaders);
+
+    res.status(204).send();
+  } catch (error: any) {
+    logger.error('Failed to delete product', { error, correlationId, productId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to delete product',
+    });
+  }
+});
+
 export default router;
