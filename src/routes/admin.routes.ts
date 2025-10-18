@@ -599,4 +599,159 @@ router.post('/reviews/bulk-delete', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Order Management Routes
+ */
+
+/**
+ * GET /api/admin/orders
+ * Get all orders
+ */
+router.get('/orders', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { orderClient } = await import('../clients/order.client');
+    const orders = await orderClient.getAllOrders(authHeaders);
+
+    res.json({
+      success: true,
+      data: orders,
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch orders', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch orders',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/orders/paged
+ * Get orders with pagination
+ */
+router.get('/orders/paged', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { orderClient } = await import('../clients/order.client');
+    const orders = await orderClient.getOrdersPaged(authHeaders, req.query);
+
+    res.json({
+      success: true,
+      data: orders.data || [],
+      pagination: {
+        page: orders.page || 1,
+        pageSize: orders.pageSize || 20,
+        total: orders.totalItems || 0,
+        totalPages: orders.totalPages || 0,
+      },
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch paged orders', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch orders',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/orders/:id
+ * Get order by ID
+ */
+router.get('/orders/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { orderClient } = await import('../clients/order.client');
+    const order = await orderClient.getOrderById(id, authHeaders);
+
+    res.json({
+      success: true,
+      data: order,
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch order', { error, correlationId, orderId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch order',
+    });
+  }
+});
+
+/**
+ * PUT /api/admin/orders/:id/status
+ * Update order status
+ */
+router.put('/orders/:id/status', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { orderClient } = await import('../clients/order.client');
+    const order = await orderClient.updateOrderStatus(id, req.body, authHeaders);
+
+    res.json({
+      success: true,
+      data: order,
+    });
+  } catch (error: any) {
+    logger.error('Failed to update order status', { error, correlationId, orderId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to update order status',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/orders/:id
+ * Delete order
+ */
+router.delete('/orders/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { orderClient } = await import('../clients/order.client');
+    await orderClient.deleteOrder(id, authHeaders);
+
+    res.status(204).send();
+  } catch (error: any) {
+    logger.error('Failed to delete order', { error, correlationId, orderId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to delete order',
+    });
+  }
+});
+
 export default router;
