@@ -44,6 +44,34 @@ export class ReviewClient extends BaseClient {
 
     return response.data;
   }
+
+  // Admin methods
+  async getAllReviews(headers: Record<string, string>, params?: any): Promise<any> {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.get<any>(`/api/v1/reviews/admin/all${queryString}`, { headers });
+  }
+
+  async getStats(headers: Record<string, string>): Promise<any> {
+    return this.get<any>('/api/v1/reviews/admin/stats', { headers });
+  }
+
+  async getReviewById(reviewId: string, headers: Record<string, string>): Promise<any> {
+    return this.get<any>(`/api/v1/reviews/${reviewId}`, { headers });
+  }
+
+  async updateReview(reviewId: string, data: any, headers: Record<string, string>): Promise<any> {
+    return this.client
+      .put<any>(`/api/v1/reviews/${reviewId}`, data, { headers })
+      .then((res) => res.data);
+  }
+
+  async deleteReview(reviewId: string, headers: Record<string, string>): Promise<void> {
+    return this.delete<void>(`/api/v1/reviews/${reviewId}`, { headers });
+  }
+
+  async bulkDeleteReviews(reviewIds: string[], headers: Record<string, string>): Promise<any> {
+    return this.post<any>('/api/v1/reviews/admin/bulk-delete', { reviewIds }, { headers });
+  }
 }
 
 export const reviewClient = new ReviewClient();

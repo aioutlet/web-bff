@@ -415,4 +415,188 @@ router.delete('/products/:id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * Review Management Routes
+ */
+
+/**
+ * GET /api/admin/reviews
+ * Get all reviews with optional filtering
+ */
+router.get('/reviews', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { reviewClient } = await import('../clients/review.client');
+    const reviews = await reviewClient.getAllReviews(authHeaders, req.query);
+
+    res.json({
+      success: true,
+      data: reviews.data || [],
+      pagination: reviews.pagination || {
+        page: 1,
+        limit: 20,
+        total: 0,
+        totalPages: 0,
+      },
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch reviews', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch reviews',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/reviews/stats
+ * Get review statistics for admin dashboard
+ */
+router.get('/reviews/stats', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { reviewClient } = await import('../clients/review.client');
+    const stats = await reviewClient.getStats(authHeaders);
+
+    res.json({
+      success: true,
+      data: stats.data || {},
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch review stats', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch review stats',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/reviews/:id
+ * Get review by ID
+ */
+router.get('/reviews/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { reviewClient } = await import('../clients/review.client');
+    const review = await reviewClient.getReviewById(id, authHeaders);
+
+    res.json({
+      success: true,
+      data: review.data || review,
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch review', { error, correlationId, reviewId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch review',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/reviews/:id
+ * Update review (approve/reject/moderate)
+ */
+router.patch('/reviews/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { reviewClient } = await import('../clients/review.client');
+    const review = await reviewClient.updateReview(id, req.body, authHeaders);
+
+    res.json({
+      success: true,
+      data: review.data || review,
+    });
+  } catch (error: any) {
+    logger.error('Failed to update review', { error, correlationId, reviewId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to update review',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/reviews/:id
+ * Delete review
+ */
+router.delete('/reviews/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { reviewClient } = await import('../clients/review.client');
+    await reviewClient.deleteReview(id, authHeaders);
+
+    res.status(204).send();
+  } catch (error: any) {
+    logger.error('Failed to delete review', { error, correlationId, reviewId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to delete review',
+    });
+  }
+});
+
+/**
+ * POST /api/admin/reviews/bulk-delete
+ * Bulk delete reviews
+ */
+router.post('/reviews/bulk-delete', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { reviewClient } = await import('../clients/review.client');
+    const result = await reviewClient.bulkDeleteReviews(req.body.reviewIds, authHeaders);
+
+    res.json({
+      success: true,
+      data: result.data || result,
+    });
+  } catch (error: any) {
+    logger.error('Failed to bulk delete reviews', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to bulk delete reviews',
+    });
+  }
+});
+
 export default router;
