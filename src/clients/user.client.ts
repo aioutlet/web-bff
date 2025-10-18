@@ -216,6 +216,29 @@ export class UserClient extends BaseClient {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  // Admin methods
+  async getAllUsers(headers: Record<string, string>): Promise<any[]> {
+    return this.get<any[]>('/api/admin/users', { headers });
+  }
+
+  async getUserById(userId: string, headers: Record<string, string>): Promise<any> {
+    return this.get<any>(`/api/admin/users/${userId}`, { headers });
+  }
+
+  async updateUserAdmin(
+    userId: string,
+    data: Partial<any>,
+    headers: Record<string, string>
+  ): Promise<any> {
+    return this.client
+      .patch<any>(`/api/admin/users/${userId}`, data, { headers })
+      .then((res) => res.data);
+  }
+
+  async deleteUserAdmin(userId: string, headers: Record<string, string>): Promise<void> {
+    return this.delete<void>(`/api/admin/users/${userId}`, { headers });
+  }
 }
 
 export const userClient = new UserClient();

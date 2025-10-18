@@ -140,7 +140,124 @@ router.get('/dashboard/analytics', async (req: Request, res: Response) => {
   }
 });
 
-// Additional admin routes can be added here for specific operations
-// For now, focusing on dashboard data aggregation
+/**
+ * User Management Routes
+ */
+
+/**
+ * GET /api/admin/users
+ * Get all users with optional filtering and pagination
+ */
+router.get('/users', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { userClient } = await import('../clients/user.client');
+    const users = await userClient.getAllUsers(authHeaders);
+
+    res.json({
+      success: true,
+      data: users,
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch users', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch users',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/users/:id
+ * Get user by ID
+ */
+router.get('/users/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { userClient } = await import('../clients/user.client');
+    const user = await userClient.getUserById(id, authHeaders);
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error: any) {
+    logger.error('Failed to fetch user', { error, correlationId, userId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to fetch user',
+    });
+  }
+});
+
+/**
+ * PATCH /api/admin/users/:id
+ * Update user
+ */
+router.patch('/users/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { userClient } = await import('../clients/user.client');
+    const user = await userClient.updateUserAdmin(id, req.body, authHeaders);
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error: any) {
+    logger.error('Failed to update user', { error, correlationId, userId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to update user',
+    });
+  }
+});
+
+/**
+ * DELETE /api/admin/users/:id
+ * Delete user
+ */
+router.delete('/users/:id', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const { id } = req.params;
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { userClient } = await import('../clients/user.client');
+    await userClient.deleteUserAdmin(id, authHeaders);
+
+    res.status(204).send();
+  } catch (error: any) {
+    logger.error('Failed to delete user', { error, correlationId, userId: id });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to delete user',
+    });
+  }
+});
 
 export default router;
