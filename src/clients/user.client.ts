@@ -226,6 +226,10 @@ export class UserClient extends BaseClient {
     return this.get<any>(`/api/admin/users/${userId}`, { headers });
   }
 
+  async createUserAdmin(data: any, headers: Record<string, string>): Promise<any> {
+    return this.post<any>('/api/admin/users', data, { headers });
+  }
+
   async updateUserAdmin(
     userId: string,
     data: Partial<any>,

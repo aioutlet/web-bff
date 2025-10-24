@@ -204,6 +204,35 @@ router.get('/users/:id', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/admin/users
+ * Create a new user
+ */
+router.post('/users', async (req: Request, res: Response) => {
+  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+
+  try {
+    const authHeaders = {
+      authorization: req.get('authorization') || '',
+      'x-correlation-id': correlationId,
+    };
+
+    const { userClient } = await import('../clients/user.client');
+    const user = await userClient.createUserAdmin(req.body, authHeaders);
+
+    res.status(201).json({
+      success: true,
+      data: user,
+    });
+  } catch (error: any) {
+    logger.error('Failed to create user', { error, correlationId });
+    res.status(error.response?.status || 500).json({
+      success: false,
+      error: error.response?.data?.message || 'Failed to create user',
+    });
+  }
+});
+
+/**
  * PATCH /api/admin/users/:id
  * Update user
  */
