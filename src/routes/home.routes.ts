@@ -18,7 +18,7 @@ router.get('/trending', async (req: RequestWithCorrelationId, res: Response) => 
       limit,
     });
 
-    const products = await storefrontAggregator.getTrendingProducts(limit);
+    const products = await storefrontAggregator.getTrendingProducts(limit, req.correlationId);
 
     res.json({
       success: true,

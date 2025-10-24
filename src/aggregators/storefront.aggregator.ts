@@ -1,7 +1,11 @@
 import { productClient, Product, TrendingCategory } from '@clients/product.client';
 import { inventoryClient, InventoryItem } from '@clients/inventory.client';
-import { reviewClient, ReviewAggregate } from '@clients/review.client';
+import { enhanceProductsWithRatings, ProductData, ProductRatingData } from './product.aggregator';
 import logger from '@observability';
+import axios from 'axios';
+import config from '@config/index';
+
+const PRODUCT_SERVICE_URL = config.services.product;
 
 export interface EnrichedProduct extends Product {
   inventory: {
@@ -27,18 +31,64 @@ export interface EnrichedCategory extends TrendingCategory {
 export class StorefrontAggregator {
   /**
    * Get trending products with inventory and review data
+   * Uses full trending algorithm with review-based scoring
    */
-  async getTrendingProducts(limit: number = 4): Promise<EnrichedProduct[]> {
+  async getTrendingProducts(limit: number = 4, correlationId?: string): Promise<EnrichedProduct[]> {
     try {
-      // Step 1: Fetch trending products
-      const products = await productClient.getTrendingProducts(limit);
+      const cid = correlationId || `storefront-trending-${Date.now()}`;
 
-      if (!products || products.length === 0) {
+      // Get trending products with review scoring
+      const trendingProducts = await this.calculateTrendingProducts(cid, limit);
+
+      if (!trendingProducts || trendingProducts.length === 0) {
         return [];
       }
 
-      // Step 2: Enrich with inventory and reviews
-      return await this.enrichProducts(products);
+      // Convert to EnrichedProduct format and add inventory data
+      const skus = trendingProducts.map((p) => p.sku).filter((sku): sku is string => Boolean(sku));
+
+      // Fetch inventory data
+      let inventoryMap = new Map<string, InventoryItem>();
+      try {
+        const inventoryData = await inventoryClient.getInventoryBatch(skus);
+        inventoryData.forEach((item) => inventoryMap.set(item.sku, item));
+      } catch (error) {
+        logger.warn('Failed to fetch inventory data for trending products', {
+          error,
+          correlationId: cid,
+        });
+      }
+
+      // Map to EnrichedProduct format
+      const enrichedProducts: EnrichedProduct[] = trendingProducts.map((product) => {
+        const inventory = product.sku ? inventoryMap.get(product.sku) : undefined;
+
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description || '',
+          price: product.price,
+          category: product.category || '',
+          sku: product.sku || '',
+          images: product.images,
+          isActive: product.is_active,
+          inventory: {
+            inStock: inventory ? inventory.quantityAvailable > 0 : false,
+            availableQuantity: inventory?.quantityAvailable || 0,
+          },
+          reviews: {
+            averageRating: product.ratingDetails.averageRating,
+            reviewCount: product.ratingDetails.totalReviews,
+          },
+        };
+      });
+
+      logger.info('Trending products aggregation complete', {
+        correlationId: cid,
+        count: enrichedProducts.length,
+      });
+
+      return enrichedProducts;
     } catch (error) {
       logger.error('Error getting trending products', { error });
       throw error;
@@ -78,6 +128,92 @@ export class StorefrontAggregator {
       logger.error('Error getting categories', { error });
       throw error;
     }
+  }
+
+  /**
+   * Calculate trending products with review-based scoring
+   * Implements Amazon-style trending algorithm:
+   * - Base score: average_rating × num_reviews
+   * - Recency boost: Products created in last 30 days get 1.5x multiplier
+   * - Minimum threshold: At least 3 reviews required
+   */
+  private async calculateTrendingProducts(
+    correlationId: string,
+    limit: number = 4
+  ): Promise<(ProductData & { ratingDetails: ProductRatingData; trendingScore: number })[]> {
+    logger.info('Calculating trending products with review data', {
+      correlationId,
+      limit,
+    });
+
+    // Step 1: Get more products than needed from Product Service (recently created)
+    // We'll fetch 3x the limit to have enough candidates after filtering
+    const candidateLimit = limit * 3;
+    const response = await axios.get(`${PRODUCT_SERVICE_URL}/api/products/trending`, {
+      params: { limit: candidateLimit },
+      headers: { 'X-Correlation-Id': correlationId },
+      timeout: 5000,
+    });
+
+    const products: ProductData[] = response.data || [];
+
+    if (products.length === 0) {
+      logger.warn('No products returned from product service', { correlationId });
+      return [];
+    }
+
+    logger.info('Fetched candidate products', {
+      correlationId,
+      candidateCount: products.length,
+    });
+
+    // Step 2: Enhance with review data
+    const productsWithRatings = await enhanceProductsWithRatings(products, correlationId);
+
+    // Step 3: Filter products with at least 3 reviews
+    const qualifiedProducts = productsWithRatings.filter((p) => p.ratingDetails.totalReviews >= 3);
+
+    logger.info('Qualified products after review filter', {
+      correlationId,
+      qualifiedCount: qualifiedProducts.length,
+      filteredOut: products.length - qualifiedProducts.length,
+    });
+
+    // Step 4: Calculate trending score for each product
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const productsWithScores = qualifiedProducts.map((product) => {
+      // Base trending score: rating × reviews
+      const baseScore = product.ratingDetails.averageRating * product.ratingDetails.totalReviews;
+
+      // Check if product is recent (created in last 30 days)
+      const createdAt = new Date(product.created_at);
+      const isRecent = createdAt >= thirtyDaysAgo;
+
+      // Apply recency boost: 50% bonus for recent products
+      const trendingScore = isRecent ? baseScore * 1.5 : baseScore;
+
+      return {
+        ...product,
+        trendingScore,
+        isRecent, // For debugging/logging
+      };
+    });
+
+    // Step 5: Sort by trending score (highest first) and limit results
+    const trendingProducts = productsWithScores
+      .sort((a, b) => b.trendingScore - a.trendingScore)
+      .slice(0, limit);
+
+    logger.info('Trending products calculation complete', {
+      correlationId,
+      returnedCount: trendingProducts.length,
+      topScore: trendingProducts[0]?.trendingScore || 0,
+      recentProductCount: trendingProducts.filter((p) => p.isRecent).length,
+    });
+
+    return trendingProducts;
   }
 
   /**
@@ -205,53 +341,6 @@ export class StorefrontAggregator {
       accurateCount,
       path: route?.path || `/products?category=${category.name}`,
     };
-  }
-
-  /**
-   * Enrich products with inventory and review data
-   */
-  private async enrichProducts(products: Product[]): Promise<EnrichedProduct[]> {
-    const skus = products.map((p) => p.sku).filter(Boolean);
-    const productIds = products.map((p) => p.id);
-
-    // Parallel fetch from inventory and review services
-    const [inventoryData, reviewData] = await Promise.allSettled([
-      inventoryClient.getInventoryBatch(skus),
-      reviewClient.getReviewsBatch(productIds),
-    ]);
-
-    // Create lookup maps
-    const inventoryMap = new Map<string, InventoryItem>();
-    if (inventoryData.status === 'fulfilled') {
-      inventoryData.value.forEach((item) => inventoryMap.set(item.sku, item));
-    } else {
-      logger.warn('Failed to fetch inventory data', { error: inventoryData.reason });
-    }
-
-    const reviewMap = new Map<string, ReviewAggregate>();
-    if (reviewData.status === 'fulfilled') {
-      reviewData.value.forEach((review) => reviewMap.set(review.productId, review));
-    } else {
-      logger.warn('Failed to fetch review data', { error: reviewData.reason });
-    }
-
-    // Combine all data
-    return products.map((product) => {
-      const inventory = inventoryMap.get(product.sku);
-      const reviews = reviewMap.get(product.id);
-
-      return {
-        ...product,
-        inventory: {
-          inStock: inventory ? inventory.quantityAvailable > 0 : false,
-          availableQuantity: inventory?.quantityAvailable || 0,
-        },
-        reviews: {
-          averageRating: reviews?.averageRating || 0,
-          reviewCount: reviews?.totalReviews || 0,
-        },
-      };
-    });
   }
 }
 

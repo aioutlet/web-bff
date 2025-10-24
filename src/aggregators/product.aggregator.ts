@@ -6,7 +6,7 @@ import { reviewClient } from '@clients/review.client';
 const REVIEW_SERVICE_URL = config.services.review;
 const PRODUCT_SERVICE_URL = config.services.product;
 
-interface ProductData {
+export interface ProductData {
   id: string;
   name: string;
   description?: string;
@@ -55,7 +55,7 @@ interface ReviewData {
   };
 }
 
-interface ProductRatingData {
+export interface ProductRatingData {
   productId: string;
   averageRating: number;
   totalReviews: number;
@@ -384,6 +384,7 @@ export async function getProductRatingsBatch(
 /**
  * Enhance products list with rating data
  * Efficiently fetches rating data for multiple products
+ * Adds both ratingDetails object and backward-compatible average_rating/num_reviews fields
  *
  * @param products - Array of product data
  * @param correlationId - Correlation ID for request tracing
@@ -392,7 +393,13 @@ export async function getProductRatingsBatch(
 export async function enhanceProductsWithRatings(
   products: ProductData[],
   correlationId: string
-): Promise<(ProductData & { ratingDetails: ProductRatingData })[]> {
+): Promise<
+  (ProductData & {
+    ratingDetails: ProductRatingData;
+    average_rating: number;
+    num_reviews: number;
+  })[]
+> {
   try {
     if (products.length === 0) {
       return [];
