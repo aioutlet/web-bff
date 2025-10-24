@@ -39,7 +39,7 @@ export interface Address {
 }
 
 export interface PagedResponse<T> {
-  data: T[];
+  items: T[];
   totalItems: number;
   page: number;
   pageSize: number;
@@ -52,7 +52,7 @@ export class OrderClient extends BaseClient {
   }
 
   // Admin methods
-  async getAllOrders(headers: Record<string, string>, params?: any): Promise<Order[]> {
+  async getAllOrders(headers: Record<string, string>): Promise<Order[]> {
     return this.get<Order[]>('/api/orders', { headers });
   }
 

@@ -624,10 +624,16 @@ router.get('/orders', async (req: Request, res: Response) => {
       data: orders,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch orders', { error, correlationId });
+    logger.error('Failed to fetch orders', {
+      error: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      correlationId,
+    });
     res.status(error.response?.status || 500).json({
       success: false,
-      error: error.response?.data?.message || 'Failed to fetch orders',
+      error: error.response?.data?.message || error.response?.data || 'Failed to fetch orders',
     });
   }
 });
@@ -650,7 +656,7 @@ router.get('/orders/paged', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      data: orders.data || [],
+      data: orders.items || [],
       pagination: {
         page: orders.page || 1,
         pageSize: orders.pageSize || 20,
@@ -659,10 +665,19 @@ router.get('/orders/paged', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.error('Failed to fetch paged orders', { error, correlationId });
+    logger.error('Failed to fetch paged orders', {
+      errorMessage: error.message,
+      status: error.response?.status,
+      responseData: error.response?.data,
+      correlationId,
+    });
     res.status(error.response?.status || 500).json({
       success: false,
-      error: error.response?.data?.message || 'Failed to fetch orders',
+      error:
+        error.response?.data?.message ||
+        error.response?.data ||
+        error.message ||
+        'Failed to fetch orders',
     });
   }
 });
