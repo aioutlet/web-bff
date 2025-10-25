@@ -46,6 +46,7 @@ export class BaseClient {
         logger.debug(`Request to ${this.serviceName}`, {
           method: config.method,
           url: config.url,
+          correlationId: config.headers?.['x-correlation-id'],
         });
         return config;
       },
@@ -60,21 +61,57 @@ export class BaseClient {
     // Response interceptor
     this.client.interceptors.response.use(
       (response) => {
+        // Extract correlation ID from response headers or request headers
+        const correlationId =
+          response.headers['x-correlation-id'] || response.config.headers?.['x-correlation-id'];
+
         logger.debug(`Response from ${this.serviceName}`, {
           status: response.status,
           url: response.config.url,
+          correlationId,
         });
         return response;
       },
       (error) => {
+        // Extract correlation ID from error response or request
+        const correlationId =
+          error.response?.headers?.['x-correlation-id'] ||
+          error.config?.headers?.['x-correlation-id'];
+
         logger.error(`Response error from ${this.serviceName}`, {
           error: error.message,
           status: error.response?.status,
           url: error.config?.url,
+          correlationId,
         });
         return Promise.reject(error);
       }
     );
+  }
+
+  // Helper method to add correlation ID to request config
+  protected withCorrelationId(
+    correlationId?: string,
+    config?: AxiosRequestConfig
+  ): AxiosRequestConfig {
+    if (!correlationId) {
+      return config || {};
+    }
+
+    const mergedConfig = {
+      ...config,
+      headers: {
+        ...config?.headers,
+        'x-correlation-id': correlationId,
+      },
+    };
+
+    logger.debug(`Adding correlation ID to ${this.serviceName} request`, {
+      correlationId,
+      headers: mergedConfig.headers,
+    });
+
+    return mergedConfig;
   }
 
   protected async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
@@ -94,6 +131,11 @@ export class BaseClient {
 
   protected async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.delete<T>(url, config);
+    return response.data;
+  }
+
+  protected async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+    const response = await this.client.patch<T>(url, data, config);
     return response.data;
   }
 }

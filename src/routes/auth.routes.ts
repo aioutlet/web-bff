@@ -18,7 +18,7 @@ router.post('/login', async (req: RequestWithCorrelationId, res: Response) => {
       email,
     });
 
-    const data = await authClient.login({ email, password });
+    const data = await authClient.login({ email, password }, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -49,7 +49,10 @@ router.post('/register', async (req: RequestWithCorrelationId, res: Response) =>
       email,
     });
 
-    const data = await authClient.register({ email, password, firstName, lastName });
+    const data = await authClient.register(
+      { email, password, firstName, lastName },
+      req.correlationId
+    );
 
     res.json(data);
   } catch (error: any) {
@@ -79,7 +82,7 @@ router.post('/logout', async (req: RequestWithCorrelationId, res: Response) => {
       correlationId: req.correlationId,
     });
 
-    await authClient.logout(refreshToken);
+    await authClient.logout(refreshToken, req.correlationId);
 
     res.json({
       success: true,
@@ -112,7 +115,7 @@ router.post('/refresh', async (req: RequestWithCorrelationId, res: Response) => 
       correlationId: req.correlationId,
     });
 
-    const data = await authClient.refreshToken({ refreshToken });
+    const data = await authClient.refreshToken({ refreshToken }, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -150,7 +153,7 @@ router.get('/me', async (req: RequestWithCorrelationId, res: Response): Promise<
       correlationId: req.correlationId,
     });
 
-    const data = await authClient.getCurrentUser(token);
+    const data = await authClient.getCurrentUser(token, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -188,7 +191,7 @@ router.get('/verify', async (req: RequestWithCorrelationId, res: Response): Prom
       correlationId: req.correlationId,
     });
 
-    const data = await authClient.verifyToken(token);
+    const data = await authClient.verifyToken(token, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -226,7 +229,7 @@ router.get('/email/verify', async (req: RequestWithCorrelationId, res: Response)
       correlationId: req.correlationId,
     });
 
-    const data = await authClient.verifyEmail(token);
+    const data = await authClient.verifyEmail(token, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -257,7 +260,7 @@ router.post('/email/resend', async (req: RequestWithCorrelationId, res: Response
       email,
     });
 
-    const data = await authClient.resendVerificationEmail(email);
+    const data = await authClient.resendVerificationEmail(email, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -288,7 +291,7 @@ router.post('/password/forgot', async (req: RequestWithCorrelationId, res: Respo
       email,
     });
 
-    const data = await authClient.forgotPassword({ email });
+    const data = await authClient.forgotPassword({ email }, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -318,7 +321,7 @@ router.post('/password/reset', async (req: RequestWithCorrelationId, res: Respon
       correlationId: req.correlationId,
     });
 
-    const data = await authClient.resetPassword({ token, password });
+    const data = await authClient.resetPassword({ token, password }, req.correlationId);
 
     res.json(data);
   } catch (error: any) {
@@ -360,7 +363,11 @@ router.post(
         correlationId: req.correlationId,
       });
 
-      const data = await authClient.changePassword({ currentPassword, newPassword }, token);
+      const data = await authClient.changePassword(
+        { currentPassword, newPassword },
+        token,
+        req.correlationId
+      );
 
       res.json(data);
     } catch (error: any) {
