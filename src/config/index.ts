@@ -52,7 +52,7 @@ const config: Config = {
   host: process.env.HOST || 'localhost',
   allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   services: {
-    product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8000',
+    product: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8003',
     inventory: process.env.INVENTORY_SERVICE_URL || 'http://localhost:5000',
     review: process.env.REVIEW_SERVICE_URL || 'http://localhost:9001',
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',

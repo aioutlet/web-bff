@@ -31,11 +31,25 @@ export interface OrderItem {
 }
 
 export interface Address {
-  street: string;
+  addressLine1: string;
+  addressLine2?: string;
   city: string;
   state: string;
-  postalCode: string;
+  zipCode: string;
   country: string;
+}
+
+export interface CreateOrderRequest {
+  customerId: string;
+  items: {
+    productId: string;
+    productName: string;
+    unitPrice: number;
+    quantity: number;
+  }[];
+  shippingAddress: Address;
+  billingAddress: Address;
+  notes?: string;
 }
 
 export interface PagedResponse<T> {
@@ -80,6 +94,30 @@ export class OrderClient extends BaseClient {
 
   async deleteOrder(orderId: string, headers: Record<string, string>): Promise<void> {
     return this.delete<void>(`/api/orders/${orderId}`, { headers });
+  }
+
+  // Customer methods
+  async createOrder(
+    orderData: CreateOrderRequest,
+    headers: Record<string, string>
+  ): Promise<Order> {
+    return this.post<Order>('/api/orders', orderData, { headers });
+  }
+
+  async getMyOrders(customerId: string, headers: Record<string, string>): Promise<Order[]> {
+    return this.get<Order[]>(`/api/orders/customer/${customerId}`, { headers });
+  }
+
+  async getMyOrdersPaged(
+    customerId: string,
+    headers: Record<string, string>,
+    params?: any
+  ): Promise<PagedResponse<Order>> {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.get<PagedResponse<Order>>(
+      `/api/orders/customer/${customerId}/paged${queryString}`,
+      { headers }
+    );
   }
 }
 

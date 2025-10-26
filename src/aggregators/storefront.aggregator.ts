@@ -171,7 +171,27 @@ export class StorefrontAggregator {
     const productsWithRatings = await enhanceProductsWithRatings(products, correlationId);
 
     // Step 3: Filter products with at least 3 reviews
-    const qualifiedProducts = productsWithRatings.filter((p) => p.ratingDetails.totalReviews >= 3);
+    let qualifiedProducts = productsWithRatings.filter((p) => p.ratingDetails.totalReviews >= 3);
+
+    // Fallback: If not enough products with 3+ reviews, use products with any reviews
+    if (qualifiedProducts.length < limit) {
+      logger.info('Not enough products with 3+ reviews, using products with any reviews', {
+        correlationId,
+        productsWithMinReviews: qualifiedProducts.length,
+      });
+
+      qualifiedProducts = productsWithRatings
+        .filter((p) => p.ratingDetails.totalReviews > 0)
+        .slice(0, candidateLimit);
+    }
+
+    // Final fallback: If still not enough, use all products
+    if (qualifiedProducts.length < limit) {
+      logger.info('Not enough products with reviews, using all available products', {
+        correlationId,
+      });
+      qualifiedProducts = productsWithRatings;
+    }
 
     logger.info('Qualified products after review filter', {
       correlationId,
