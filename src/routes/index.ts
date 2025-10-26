@@ -6,6 +6,7 @@ import healthRoutes from './health.routes';
 import productsRoutes from './products.routes';
 import adminRoutes from './admin.routes';
 import orderRoutes from './order.routes';
+import cartRoutes from './cart.routes';
 
 const router = Router();
 
@@ -15,6 +16,7 @@ router.use('/auth', authRoutes);
 router.use('/user', userRoutes);
 router.use('/products', productsRoutes);
 router.use('/orders', orderRoutes);
+router.use('/cart', cartRoutes);
 router.use('/admin', adminRoutes);
 
 // Health check routes (no /api prefix)

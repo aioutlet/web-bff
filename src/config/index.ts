@@ -57,7 +57,7 @@ const config: Config = {
     review: process.env.REVIEW_SERVICE_URL || 'http://localhost:9001',
     auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
     user: process.env.USER_SERVICE_URL || 'http://localhost:3002',
-    cart: process.env.CART_SERVICE_URL || 'http://localhost:8006',
+    cart: process.env.CART_SERVICE_URL || 'http://localhost:8085',
     order: process.env.ORDER_SERVICE_URL || 'http://localhost:5088',
     admin: process.env.ADMIN_SERVICE_URL || 'http://localhost:3010',
   },
