@@ -42,7 +42,7 @@ router.post('/login', async (req: RequestWithCorrelationId, res: Response) => {
  */
 router.post('/register', async (req: RequestWithCorrelationId, res: Response) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, firstName, lastName, phoneNumber } = req.body;
 
     logger.info('Registration attempt', {
       correlationId: req.correlationId,
@@ -50,7 +50,7 @@ router.post('/register', async (req: RequestWithCorrelationId, res: Response) =>
     });
 
     const data = await authClient.register(
-      { email, password, firstName, lastName },
+      { email, password, firstName, lastName, phoneNumber },
       req.correlationId
     );
 

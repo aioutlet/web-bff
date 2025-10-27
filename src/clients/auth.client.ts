@@ -12,6 +12,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  phoneNumber: string;
 }
 
 export interface AuthResponse {
@@ -23,6 +24,7 @@ export interface AuthResponse {
     email: string;
     firstName: string;
     lastName: string;
+    phoneNumber: string;
   };
 }
 
