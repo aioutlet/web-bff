@@ -305,7 +305,6 @@ export async function getProductRatingsBatch(
       correlationId,
       productCount: productIds.length,
     });
-    console.log('[BFF-ProductAggregator] getProductRatingsBatch called with:', productIds);
 
     if (productIds.length === 0) {
       return [];
@@ -315,12 +314,7 @@ export async function getProductRatingsBatch(
       throw new Error('Maximum 100 products per batch request');
     }
 
-    console.log('[BFF-ProductAggregator] Calling reviewClient.getReviewsBatch...');
     const reviewData = await reviewClient.getReviewsBatch(productIds);
-    console.log(
-      '[BFF-ProductAggregator] Received reviewData from client:',
-      JSON.stringify(reviewData, null, 2)
-    );
 
     // Map ReviewAggregate to ProductRatingData
     const ratings = reviewData.map((review) => ({
@@ -342,8 +336,6 @@ export async function getProductRatingsBatch(
       lastUpdated: new Date().toISOString(),
     }));
 
-    console.log('[BFF-ProductAggregator] Mapped ratings data:', JSON.stringify(ratings, null, 2));
-
     logger.info('Successfully fetched product ratings batch', {
       correlationId,
       requestedCount: productIds.length,
@@ -352,7 +344,6 @@ export async function getProductRatingsBatch(
 
     return ratings;
   } catch (error) {
-    console.error('[BFF-ProductAggregator] Error in getProductRatingsBatch:', error);
     logger.error('Error fetching product ratings batch', {
       correlationId,
       productCount: productIds.length,

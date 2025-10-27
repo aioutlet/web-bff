@@ -96,20 +96,24 @@ export class AuthClient extends BaseClient {
   }
 
   async login(data: LoginRequest, correlationId?: string): Promise<AuthResponse> {
-    return this.post<AuthResponse>('/api/auth/login', data, this.withCorrelationId(correlationId));
+    return this.post<AuthResponse>(
+      '/api/auth/login',
+      data,
+      this.addCorrelationIdHeader(correlationId)
+    );
   }
 
   async register(data: RegisterRequest, correlationId?: string): Promise<AuthResponse> {
     return this.post<AuthResponse>(
       '/api/auth/register',
       data,
-      this.withCorrelationId(correlationId)
+      this.addCorrelationIdHeader(correlationId)
     );
   }
 
   async logout(refreshToken: string, correlationId?: string): Promise<void> {
     // Use session cookies and CSRF token for logout
-    const config = this.withCorrelationId(correlationId, {});
+    const config = this.addCorrelationIdHeader(correlationId, {});
 
     // Add session cookies
     if (this.sessionCookies) {
@@ -137,26 +141,26 @@ export class AuthClient extends BaseClient {
     return this.post<AuthResponse>(
       '/api/auth/token/refresh',
       data,
-      this.withCorrelationId(correlationId)
+      this.addCorrelationIdHeader(correlationId)
     );
   }
 
   async getCurrentUser(token: string, correlationId?: string): Promise<any> {
-    const config = this.withCorrelationId(correlationId, {
+    const config = this.addCorrelationIdHeader(correlationId, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return this.get<any>('/api/auth/me', config);
   }
 
   async verifyToken(token: string, correlationId?: string): Promise<any> {
-    const config = this.withCorrelationId(correlationId, {
+    const config = this.addCorrelationIdHeader(correlationId, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return this.get<any>('/api/auth/verify', config);
   }
 
   async verifyEmail(token: string, correlationId?: string): Promise<any> {
-    const config = this.withCorrelationId(correlationId, { params: { token } });
+    const config = this.addCorrelationIdHeader(correlationId, { params: { token } });
     return this.get<any>('/api/auth/email/verify', config);
   }
 
@@ -164,16 +168,24 @@ export class AuthClient extends BaseClient {
     return this.post<any>(
       '/api/auth/email/resend',
       { email },
-      this.withCorrelationId(correlationId)
+      this.addCorrelationIdHeader(correlationId)
     );
   }
 
   async forgotPassword(data: PasswordResetRequest, correlationId?: string): Promise<any> {
-    return this.post<any>('/api/auth/password/forgot', data, this.withCorrelationId(correlationId));
+    return this.post<any>(
+      '/api/auth/password/forgot',
+      data,
+      this.addCorrelationIdHeader(correlationId)
+    );
   }
 
   async resetPassword(data: PasswordResetConfirmRequest, correlationId?: string): Promise<any> {
-    return this.post<any>('/api/auth/password/reset', data, this.withCorrelationId(correlationId));
+    return this.post<any>(
+      '/api/auth/password/reset',
+      data,
+      this.addCorrelationIdHeader(correlationId)
+    );
   }
 
   async changePassword(
@@ -181,7 +193,7 @@ export class AuthClient extends BaseClient {
     token: string,
     correlationId?: string
   ): Promise<any> {
-    const config = this.withCorrelationId(correlationId, {
+    const config = this.addCorrelationIdHeader(correlationId, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return this.post<any>('/api/auth/password/change', data, config);

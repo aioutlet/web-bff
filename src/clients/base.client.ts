@@ -90,7 +90,7 @@ export class BaseClient {
   }
 
   // Helper method to add correlation ID to request config
-  protected withCorrelationId(
+  protected addCorrelationIdHeader(
     correlationId?: string,
     config?: AxiosRequestConfig
   ): AxiosRequestConfig {
