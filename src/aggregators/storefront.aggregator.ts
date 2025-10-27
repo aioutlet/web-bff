@@ -338,20 +338,9 @@ export class StorefrontAggregator {
     // Get routing information for this category
     const route = categoryRoutes[category.name];
 
-    // Fetch accurate product count for the specific department+category combination
-    let accurateCount = category.product_count; // Fallback to original count
-    if (route) {
-      try {
-        accurateCount = await productClient.getProductCount(route.department, route.categoryName);
-      } catch (error) {
-        logger.warn(
-          `Failed to fetch accurate count for ${route.department}/${route.categoryName}`,
-          {
-            error,
-          }
-        );
-      }
-    }
+    // Use the product count already provided by the trending categories endpoint
+    // This avoids making 5 additional API calls for product counts
+    const accurateCount = category.product_count;
 
     return {
       ...category,
