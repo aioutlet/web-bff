@@ -20,6 +20,7 @@ app.use(
   cors({
     origin: config.allowedOrigins,
     credentials: true,
+    exposedHeaders: ['x-correlation-id', 'X-Correlation-ID'],
   })
 );
 

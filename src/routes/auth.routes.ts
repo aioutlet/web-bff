@@ -27,10 +27,16 @@ router.post('/login', async (req: RequestWithCorrelationId, res: Response) => {
       error: error.message,
     });
 
+    // Extract error message - Auth Service returns { success: false, error: "message" }
+    const errorMessage =
+      error.response?.data?.error || // Auth Service format (error is a string)
+      error.response?.data?.message || // Alternative format
+      'Login failed';
+
     res.status(error.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Login failed',
+        message: errorMessage,
       },
     });
   }
