@@ -1,10 +1,6 @@
-import axios from 'axios';
-import logger from '@observability';
-import config from '@config/index';
+import { productClient } from '@clients/product.client';
 import { reviewClient } from '@clients/review.client';
-
-const REVIEW_SERVICE_URL = config.services.review;
-const PRODUCT_SERVICE_URL = config.services.product;
+import logger from '../core/logger';
 
 export interface ProductData {
   id: string;
@@ -116,32 +112,26 @@ export async function aggregateProductWithReviews(
       includeRatingDetails,
     });
 
-    // Prepare parallel requests
-    const requests = [
+    // Prepare parallel requests using Dapr clients
+    const requests: Promise<any>[] = [
       // Product data from product service
-      axios.get(`${PRODUCT_SERVICE_URL}/api/products/${productId}`, {
-        headers: { 'X-Correlation-Id': correlationId },
-        timeout: 5000,
-      }),
+      productClient.getProductDetailsById(productId, { 'X-Correlation-Id': correlationId }),
       // Individual reviews for display
-      axios.get(`${REVIEW_SERVICE_URL}/api/v1/reviews/product/${productId}`, {
-        params: {
+      reviewClient.getProductReviewsList(
+        productId,
+        {
           status: 'approved',
           limit,
-          sort: 'helpful', // Sort by most helpful reviews
+          sort: 'helpful',
         },
-        headers: { 'X-Correlation-Id': correlationId },
-        timeout: 5000,
-      }),
+        { 'X-Correlation-Id': correlationId }
+      ),
     ];
 
     // Add rating details request if needed
     if (includeRatingDetails) {
       requests.push(
-        axios.get(`${REVIEW_SERVICE_URL}/api/v1/reviews/products/${productId}/rating`, {
-          headers: { 'X-Correlation-Id': correlationId },
-          timeout: 3000, // Faster timeout for cached data
-        })
+        reviewClient.getProductRating(productId, { 'X-Correlation-Id': correlationId })
       );
     }
 
@@ -158,13 +148,13 @@ export async function aggregateProductWithReviews(
       throw new Error(`Failed to fetch product: ${productResponse.reason.message}`);
     }
 
-    const product: ProductData = productResponse.value.data;
+    const product: ProductData = productResponse.value;
 
     // Handle reviews response (non-critical - can proceed without reviews)
     let reviews: ReviewData[] = [];
     const reviewsResponse = responses[1];
     if (reviewsResponse.status === 'fulfilled') {
-      reviews = reviewsResponse.value.data.data?.reviews || [];
+      reviews = reviewsResponse.value.data?.reviews || [];
       logger.info('Successfully fetched reviews', {
         correlationId,
         productId,
@@ -183,7 +173,7 @@ export async function aggregateProductWithReviews(
     if (includeRatingDetails && responses[2]) {
       const ratingResponse = responses[2];
       if (ratingResponse.status === 'fulfilled') {
-        ratingDetails = ratingResponse.value.data.data;
+        ratingDetails = ratingResponse.value.data;
         logger.info('Successfully fetched rating details', {
           correlationId,
           productId,
@@ -250,19 +240,19 @@ export async function getProductReviews(
       sort,
     });
 
-    const response = await axios.get(`${REVIEW_SERVICE_URL}/api/v1/reviews/product/${productId}`, {
-      params: {
+    const response = await reviewClient.getProductReviewsList(
+      productId,
+      {
         status: 'approved',
         skip,
         limit,
         sort,
       },
-      headers: { 'X-Correlation-Id': correlationId },
-      timeout: 5000,
-    });
+      { 'X-Correlation-Id': correlationId }
+    );
 
-    const reviews = response.data.data?.reviews || [];
-    const total = response.data.data?.total || 0;
+    const reviews = response.data?.reviews || [];
+    const total = response.data?.total || 0;
     const hasMore = skip + reviews.length < total;
 
     logger.info('Successfully fetched product reviews', {

@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { orderClient } from '@clients/order.client';
-import logger from '@observability';
+import logger from '../core/logger';
 import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
 import jwt from 'jsonwebtoken';
 

@@ -1,0 +1,12 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: web-bff-config
+spec:
+  features:
+    - name: SchedulerReminders
+      enabled: false
+  tracing:
+    samplingRate: '0'
+  mtls:
+    enabled: false

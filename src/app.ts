@@ -1,19 +1,15 @@
 import express, { Application } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import config from '@config/index';
+import config from '@/core/config';
 import routes from '@routes/index';
 import { correlationIdMiddleware } from '@middleware/correlation-id.middleware';
-import { loggingMiddleware } from '@middleware/logging.middleware';
 import { errorMiddleware } from '@middleware/error.middleware';
-import { rateLimitMiddleware } from '@middleware/rate-limit.middleware';
 import healthRoutes from '@routes/health.routes';
 
 const app: Application = express();
 
-// Security middleware
-app.use(helmet());
+// Trust proxy for accurate IP address extraction
+app.set('trust proxy', true);
 
 // CORS configuration
 app.use(
@@ -28,13 +24,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Compression middleware
-app.use(compression());
-
 // Custom middleware
 app.use(correlationIdMiddleware);
-app.use(loggingMiddleware);
-app.use(rateLimitMiddleware);
 
 // Health check route (no /api prefix)
 app.use('/health', healthRoutes);

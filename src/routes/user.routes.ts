@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { userClient } from '@clients/user.client';
-import logger from '@observability';
+import logger from '../core/logger';
 import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
 
 const router = Router();

@@ -78,80 +78,26 @@ const validationRules: Record<string, ValidationRule> = {
     errorMessage: 'HOST must be a non-empty string',
   },
 
-  // Service URLs (required)
-  AUTH_SERVICE_URL: {
-    required: true,
-    validator: isValidUrl,
-    errorMessage: 'AUTH_SERVICE_URL must be a valid URL',
-  },
-  USER_SERVICE_URL: {
-    required: true,
-    validator: isValidUrl,
-    errorMessage: 'USER_SERVICE_URL must be a valid URL',
-  },
-
-  // Service URLs (optional but must be valid if provided)
-  PRODUCT_SERVICE_URL: {
+  // Dapr Configuration
+  DAPR_ENABLED: {
     required: false,
-    validator: isValidUrl,
-    errorMessage: 'PRODUCT_SERVICE_URL must be a valid URL if provided',
+    validator: (value) => ['true', 'false'].includes(value.toLowerCase()),
+    errorMessage: 'DAPR_ENABLED must be true or false',
   },
-  INVENTORY_SERVICE_URL: {
+  DAPR_HOST: {
     required: false,
-    validator: isValidUrl,
-    errorMessage: 'INVENTORY_SERVICE_URL must be a valid URL if provided',
+    validator: (value) => !!(value && value.length > 0),
+    errorMessage: 'DAPR_HOST must be a non-empty string',
   },
-  REVIEW_SERVICE_URL: {
+  DAPR_HTTP_PORT: {
     required: false,
-    validator: isValidUrl,
-    errorMessage: 'REVIEW_SERVICE_URL must be a valid URL if provided',
+    validator: isValidPort,
+    errorMessage: 'DAPR_HTTP_PORT must be a valid port number',
   },
-  CART_SERVICE_URL: {
+  DAPR_GRPC_PORT: {
     required: false,
-    validator: isValidUrl,
-    errorMessage: 'CART_SERVICE_URL must be a valid URL if provided',
-  },
-  ORDER_SERVICE_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'ORDER_SERVICE_URL must be a valid URL if provided',
-  },
-
-  // Service Health URLs (optional but must be valid if provided)
-  AUTH_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'AUTH_SERVICE_HEALTH_URL must be a valid URL if provided',
-  },
-  USER_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'USER_SERVICE_HEALTH_URL must be a valid URL if provided',
-  },
-  PRODUCT_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'PRODUCT_SERVICE_HEALTH_URL must be a valid URL if provided',
-  },
-  INVENTORY_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'INVENTORY_SERVICE_HEALTH_URL must be a valid URL if provided',
-  },
-  REVIEW_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'REVIEW_SERVICE_HEALTH_URL must be a valid URL if provided',
-  },
-  CART_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'CART_SERVICE_HEALTH_URL must be a valid URL if provided',
-  },
-  ORDER_SERVICE_HEALTH_URL: {
-    required: false,
-    validator: isValidUrl,
-    errorMessage: 'ORDER_SERVICE_HEALTH_URL must be a valid URL if provided',
+    validator: isValidPort,
+    errorMessage: 'DAPR_GRPC_PORT must be a valid port number',
   },
 
   // CORS Configuration
@@ -182,30 +128,6 @@ const validationRules: Record<string, ValidationRule> = {
     required: false,
     validator: isValidLogLevel,
     errorMessage: 'LOG_LEVEL must be one of: error, warn, info, debug, trace',
-  },
-
-  // Redis Configuration
-  REDIS_HOST: {
-    required: false,
-    validator: (value) => !!(value && value.length > 0),
-    errorMessage: 'REDIS_HOST must be a non-empty string if provided',
-  },
-  REDIS_PORT: {
-    required: false,
-    validator: (value) => isValidPort(value),
-    errorMessage: 'REDIS_PORT must be a valid port number if provided',
-  },
-
-  // Rate Limiting Configuration
-  RATE_LIMIT_WINDOW_MS: {
-    required: false,
-    validator: (value) => !isNaN(parseInt(value, 10)) && parseInt(value, 10) > 0,
-    errorMessage: 'RATE_LIMIT_WINDOW_MS must be a positive number',
-  },
-  RATE_LIMIT_MAX_REQUESTS: {
-    required: false,
-    validator: (value) => !isNaN(parseInt(value, 10)) && parseInt(value, 10) > 0,
-    errorMessage: 'RATE_LIMIT_MAX_REQUESTS must be a positive number',
   },
 };
 

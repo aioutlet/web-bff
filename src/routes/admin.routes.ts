@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import logger from '../observability/logging/index';
+import logger from '../core/logger';
 import { adminDashboardAggregator } from '../aggregators/admin.dashboard.aggregator';
 
 const router = Router();
@@ -12,130 +12,43 @@ const router = Router();
 /**
  * Dashboard Stats Aggregation
  * Aggregates stats from multiple microservices via dedicated aggregator
+ * Optionally includes recent orders and users
  */
 router.get('/dashboard/stats', async (req: Request, res: Response) => {
   const correlationId = req.get('x-correlation-id') || 'no-correlation';
+  const includeRecent = req.query.includeRecent === 'true';
+  const recentLimit = parseInt(req.query.recentLimit as string) || 10;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
     };
 
+    // Get base stats
     const stats = await adminDashboardAggregator.getDashboardStats(correlationId, authHeaders);
+
+    // Optionally add recent data if requested
+    let response: any = { ...stats };
+
+    if (includeRecent) {
+      const [recentOrders, recentUsers] = await Promise.allSettled([
+        adminDashboardAggregator.getRecentOrders(recentLimit, correlationId, authHeaders),
+        adminDashboardAggregator.getRecentUsers(recentLimit, correlationId, authHeaders),
+      ]);
+
+      response.recentOrders = recentOrders.status === 'fulfilled' ? recentOrders.value : [];
+      response.recentUsers = recentUsers.status === 'fulfilled' ? recentUsers.value : [];
+    }
 
     res.json({
       success: true,
-      data: stats,
+      data: response,
     });
   } catch (error) {
     logger.error('Failed to fetch dashboard stats', { error, correlationId });
     res.status(500).json({
       success: false,
       error: 'Failed to fetch dashboard statistics',
-    });
-  }
-});
-
-/**
- * Recent Orders
- * Fetches recent orders via aggregator
- */
-router.get('/dashboard/recent-orders', async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
-  const limit = parseInt(req.query.limit as string) || 5;
-
-  try {
-    const authHeaders = {
-      authorization: req.get('authorization') || '',
-    };
-
-    const recentOrders = await adminDashboardAggregator.getRecentOrders(
-      limit,
-      correlationId,
-      authHeaders
-    );
-
-    res.json({
-      success: true,
-      data: recentOrders,
-    });
-  } catch (error) {
-    logger.error('Failed to fetch recent orders', { error, correlationId });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch recent orders',
-      data: [], // Return empty array as fallback
-    });
-  }
-});
-
-/**
- * Recent Users
- * Fetches recent users via aggregator
- */
-router.get('/dashboard/recent-users', async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
-  const limit = parseInt(req.query.limit as string) || 5;
-
-  try {
-    const authHeaders = {
-      authorization: req.get('authorization') || '',
-    };
-
-    const recentUsers = await adminDashboardAggregator.getRecentUsers(
-      limit,
-      correlationId,
-      authHeaders
-    );
-
-    res.json({
-      success: true,
-      data: recentUsers,
-    });
-  } catch (error) {
-    logger.error('Failed to fetch recent users', { error, correlationId });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch recent users',
-      data: [], // Return empty array as fallback
-    });
-  }
-});
-
-/**
- * Analytics Data
- * Fetches analytics via aggregator
- */
-router.get('/dashboard/analytics', async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
-  const period = (req.query.period as string) || '7d';
-
-  try {
-    const authHeaders = {
-      authorization: req.get('authorization') || '',
-    };
-
-    const analytics = await adminDashboardAggregator.getAnalyticsData(
-      period,
-      correlationId,
-      authHeaders
-    );
-
-    res.json({
-      success: true,
-      data: analytics,
-    });
-  } catch (error) {
-    logger.error('Failed to fetch analytics data', { error, correlationId });
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch analytics data',
-      data: {
-        period,
-        users: null,
-        orders: null,
-        products: null,
-      },
     });
   }
 });
@@ -157,8 +70,8 @@ router.get('/users', async (req: Request, res: Response) => {
       'x-correlation-id': correlationId,
     };
 
-    const { userClient } = await import('../clients/user.client');
-    const users = await userClient.getAllUsers(authHeaders);
+    const { adminClient } = await import('../clients/admin.client');
+    const users = await adminClient.getAllUsers(authHeaders);
 
     res.json({
       success: true,
@@ -187,8 +100,8 @@ router.get('/users/:id', async (req: Request, res: Response) => {
       'x-correlation-id': correlationId,
     };
 
-    const { userClient } = await import('../clients/user.client');
-    const user = await userClient.getUserById(id, authHeaders);
+    const { adminClient } = await import('../clients/admin.client');
+    const user = await adminClient.getUserById(id, authHeaders);
 
     res.json({
       success: true,
@@ -216,8 +129,8 @@ router.post('/users', async (req: Request, res: Response) => {
       'x-correlation-id': correlationId,
     };
 
-    const { userClient } = await import('../clients/user.client');
-    const user = await userClient.createUserAdmin(req.body, authHeaders);
+    const { adminClient } = await import('../clients/admin.client');
+    const user = await adminClient.createUser(req.body, authHeaders);
 
     res.status(201).json({
       success: true,
@@ -246,8 +159,8 @@ router.patch('/users/:id', async (req: Request, res: Response) => {
       'x-correlation-id': correlationId,
     };
 
-    const { userClient } = await import('../clients/user.client');
-    const user = await userClient.updateUserAdmin(id, req.body, authHeaders);
+    const { adminClient } = await import('../clients/admin.client');
+    const user = await adminClient.updateUser(id, req.body, authHeaders);
 
     res.json({
       success: true,
@@ -276,8 +189,8 @@ router.delete('/users/:id', async (req: Request, res: Response) => {
       'x-correlation-id': correlationId,
     };
 
-    const { userClient } = await import('../clients/user.client');
-    await userClient.deleteUserAdmin(id, authHeaders);
+    const { adminClient } = await import('../clients/admin.client');
+    await adminClient.deleteUser(id, authHeaders);
 
     res.status(204).send();
   } catch (error: any) {
@@ -497,11 +410,11 @@ router.get('/reviews/stats', async (req: Request, res: Response) => {
     };
 
     const { reviewClient } = await import('../clients/review.client');
-    const stats = await reviewClient.getStats(authHeaders);
+    const stats = await reviewClient.getDashboardStats(authHeaders);
 
     res.json({
       success: true,
-      data: stats.data || {},
+      data: stats.data || stats,
     });
   } catch (error: any) {
     logger.error('Failed to fetch review stats', { error, correlationId });

@@ -1,11 +1,29 @@
-// Note: This file is now imported by bootstrap.ts
-// The bootstrap.ts file handles the complete initialization sequence
+import dotenv from 'dotenv';
+dotenv.config({ quiet: true });
+
 import app from './app';
-import config from '@config/index';
-import logger from './observability/index';
+import config from './core/config';
+import logger from './core/logger';
+import validateConfig from './validators/config.validator';
 
-// This file is kept for backward compatibility and testing
-// In production, use bootstrap.ts for the full initialization sequence
+// Validate configuration
+validateConfig();
 
-export { app, config, logger };
-export default app;
+const PORT = config.port;
+const HOST = config.host;
+
+app.listen(PORT, HOST, () => {
+  logger.info(`Web BFF running on ${HOST}:${PORT} in ${config.env} mode`, {
+    service: 'web-bff',
+    version: '1.0.0',
+    daprEnabled: config.dapr.enabled,
+  });
+});
+
+const gracefulShutdown = (signal: string) => {
+  logger.info(`Received ${signal}. Starting graceful shutdown...`);
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

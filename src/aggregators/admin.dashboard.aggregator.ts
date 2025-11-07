@@ -3,9 +3,11 @@
  * Handles aggregation of data from multiple microservices for admin dashboard
  */
 
-import { serviceCall } from '../clients/service.client';
-import logger from '../observability/logging/index';
-import config from '../config/index';
+import logger from '../core/logger';
+import { userClient } from '../clients/user.client';
+import { orderClient } from '../clients/order.client';
+import { productClient } from '../clients/product.client';
+import { reviewClient } from '../clients/review.client';
 
 export interface DashboardStats {
   users: {
@@ -62,6 +64,7 @@ export interface AnalyticsData {
 export class AdminDashboardAggregator {
   /**
    * Aggregates dashboard statistics from multiple microservices
+   * Now uses optimized getDashboardStats() endpoints - reduces from 10+ calls to 4 parallel calls
    */
   async getDashboardStats(
     correlationId: string,
@@ -74,63 +77,38 @@ export class AdminDashboardAggregator {
       ...authHeaders,
     };
 
-    // Parallel calls to different services for dashboard stats
-    const [userStats, orders, productStats, reviewStats] = await Promise.allSettled([
-      // User service stats
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.user}/api/admin/users/stats`,
-        headers,
-      }).catch(() => ({ total: 0, active: 0, newThisMonth: 0, growth: 0 })),
-
-      // Order service - get all orders
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.order}/api/orders`,
-        headers,
-      }).catch(() => []),
-
-      // Product service stats
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.product}/api/admin/stats`,
-        headers,
-      }).catch(() => ({ total: 0, active: 0, lowStock: 0, outOfStock: 0 })),
-
-      // Review service stats
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.review}/api/v1/reviews/admin/stats`,
-        headers,
-      })
-        .then((response: any) => response.data || response) // Extract data field if wrapped
-        .catch(() => ({ total: 0, pending: 0, averageRating: 0, growth: 0 })),
+    // Single optimized call per service - each returns comprehensive dashboard data
+    const [userStats, orderStats, productStats, reviewStats] = await Promise.allSettled([
+      userClient.getDashboardStats(headers, { includeRecent: false }),
+      orderClient.getDashboardStats(headers, { includeRecent: false }),
+      productClient.getDashboardStats(headers, { includeRecent: false }),
+      reviewClient.getDashboardStats(headers, { includeRecent: false }),
     ]);
 
     try {
-      // Process user stats (already calculated by user service)
+      // Process user stats
       const userStatsData =
         userStats.status === 'fulfilled'
           ? userStats.value
           : { total: 0, active: 0, newThisMonth: 0, growth: 0 };
 
-      // Process order data
-      const orderList =
-        orders.status === 'fulfilled' ? orders.value?.data || orders.value || [] : [];
-      const orderArray = Array.isArray(orderList) ? orderList : [];
-      const pendingOrders = orderArray.filter(
-        (o: any) => o.status === 0 || o.status === 'Created'
-      ).length;
-      const processingOrders = orderArray.filter(
-        (o: any) => o.status === 1 || o.status === 'Processing'
-      ).length;
-      const completedOrders = orderArray.filter(
-        (o: any) => o.status === 3 || o.status === 'Delivered'
-      ).length;
-      const totalRevenue = orderArray.reduce(
-        (sum: number, o: any) => sum + (o.totalAmount || 0),
-        0
-      );
+      // Process order stats
+      const orderStatsData =
+        orderStats.status === 'fulfilled'
+          ? orderStats.value
+          : { total: 0, pending: 0, processing: 0, completed: 0, revenue: 0, growth: 0 };
+
+      // Process product stats
+      const productStatsData =
+        productStats.status === 'fulfilled'
+          ? productStats.value
+          : { total: 0, active: 0, lowStock: 0, outOfStock: 0 };
+
+      // Process review stats
+      const reviewStatsData =
+        reviewStats.status === 'fulfilled'
+          ? reviewStats.value?.data || reviewStats.value
+          : { total: 0, pending: 0, averageRating: 0, growth: 0 };
 
       // Aggregate the stats from different services
       const aggregatedStats: DashboardStats = {
@@ -141,25 +119,24 @@ export class AdminDashboardAggregator {
           growth: userStatsData.growth || 0,
         },
         orders: {
-          total: orderArray.length,
-          pending: pendingOrders,
-          processing: processingOrders,
-          completed: completedOrders,
-          revenue: totalRevenue,
-          growth: 8.3, // Mock growth
+          total: orderStatsData.total || 0,
+          pending: orderStatsData.pending || 0,
+          processing: orderStatsData.processing || 0,
+          completed: orderStatsData.completed || 0,
+          revenue: orderStatsData.revenue || 0,
+          growth: orderStatsData.growth || 0,
         },
         products: {
-          total: productStats.status === 'fulfilled' ? productStats.value?.total || 0 : 0,
-          active: productStats.status === 'fulfilled' ? productStats.value?.active || 0 : 0,
-          lowStock: productStats.status === 'fulfilled' ? productStats.value?.lowStock || 0 : 0,
-          outOfStock: productStats.status === 'fulfilled' ? productStats.value?.outOfStock || 0 : 0,
+          total: productStatsData.total || 0,
+          active: productStatsData.active || 0,
+          lowStock: productStatsData.lowStock || 0,
+          outOfStock: productStatsData.outOfStock || 0,
         },
         reviews: {
-          total: reviewStats.status === 'fulfilled' ? reviewStats.value?.total || 0 : 0,
-          pending: reviewStats.status === 'fulfilled' ? reviewStats.value?.pending || 0 : 0,
-          averageRating:
-            reviewStats.status === 'fulfilled' ? reviewStats.value?.averageRating || 0 : 0,
-          growth: reviewStats.status === 'fulfilled' ? reviewStats.value?.growth || 0 : 0,
+          total: reviewStatsData.total || 0,
+          pending: reviewStatsData.pending || 0,
+          averageRating: reviewStatsData.averageRating || 0,
+          growth: reviewStatsData.growth || 0,
         },
       };
 
@@ -167,13 +144,13 @@ export class AdminDashboardAggregator {
         correlationId,
         servicesResponded: {
           users: userStats.status === 'fulfilled',
-          orders: orders.status === 'fulfilled',
+          orders: orderStats.status === 'fulfilled',
           products: productStats.status === 'fulfilled',
           reviews: reviewStats.status === 'fulfilled',
         },
         stats: {
           users: userStatsData.total,
-          orders: orderArray.length,
+          orders: orderStatsData.total,
         },
       });
 
@@ -211,14 +188,7 @@ export class AdminDashboardAggregator {
     };
 
     try {
-      const response = await serviceCall({
-        method: 'GET',
-        url: `${config.services.order}/api/orders`,
-        headers,
-      });
-
-      // Get the orders array (handle both wrapped and unwrapped responses)
-      const orderList = response?.data || response || [];
+      const orderList = await orderClient.getAllOrders(headers);
 
       // Sort by creation date (newest first) and limit
       const recentOrders = orderList
@@ -260,6 +230,7 @@ export class AdminDashboardAggregator {
 
   /**
    * Fetches recent users from user service
+   * Uses optimized getDashboardStats with includeRecent option
    */
   async getRecentUsers(
     limit: number,
@@ -273,17 +244,22 @@ export class AdminDashboardAggregator {
       ...authHeaders,
     };
 
-    const recentUsers = await serviceCall({
-      method: 'GET',
-      url: `${config.services.user}/api/admin/users/list/recent?limit=${limit}`,
-      headers,
-    });
+    try {
+      const response = await userClient.getDashboardStats(headers, {
+        includeRecent: true,
+        recentLimit: limit,
+      });
 
-    return recentUsers || [];
+      return response.recentUsers || [];
+    } catch (error) {
+      logger.error('Failed to fetch recent users', { error, correlationId });
+      return [];
+    }
   }
 
   /**
    * Aggregates analytics data from multiple services
+   * Uses optimized getDashboardStats with analytics period option
    */
   async getAnalyticsData(
     period: string,
@@ -299,30 +275,16 @@ export class AdminDashboardAggregator {
 
     // Parallel calls for analytics data from multiple services
     const [userAnalytics, orderAnalytics, productAnalytics] = await Promise.allSettled([
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.user}/api/admin/analytics?period=${period}`,
-        headers,
-      }),
-
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.order}/api/admin/analytics?period=${period}`,
-        headers,
-      }),
-
-      serviceCall({
-        method: 'GET',
-        url: `${config.services.product}/api/admin/analytics?period=${period}`,
-        headers,
-      }),
+      userClient.getDashboardStats(headers, { analyticsPeriod: period }),
+      orderClient.getDashboardStats(headers, { analyticsPeriod: period }),
+      productClient.getDashboardStats(headers, { analyticsPeriod: period }),
     ]);
 
     const analytics: AnalyticsData = {
       period,
-      users: userAnalytics.status === 'fulfilled' ? userAnalytics.value : null,
-      orders: orderAnalytics.status === 'fulfilled' ? orderAnalytics.value : null,
-      products: productAnalytics.status === 'fulfilled' ? productAnalytics.value : null,
+      users: userAnalytics.status === 'fulfilled' ? userAnalytics.value?.analytics : null,
+      orders: orderAnalytics.status === 'fulfilled' ? orderAnalytics.value?.analytics : null,
+      products: productAnalytics.status === 'fulfilled' ? productAnalytics.value?.analytics : null,
     };
 
     logger.info('Analytics data aggregated', {

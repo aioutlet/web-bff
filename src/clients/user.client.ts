@@ -1,5 +1,5 @@
-import { BaseClient } from './base.client';
-import config from '@config/index';
+import { DaprBaseClient } from './dapr.base.client';
+import config from '@/core/config';
 
 export interface UserProfile {
   id: string;
@@ -73,44 +73,34 @@ export interface WishlistItem {
   addedAt: string;
 }
 
-export class UserClient extends BaseClient {
+export class UserClient extends DaprBaseClient {
   constructor() {
     super(config.services.user, 'user-service');
   }
 
   // Profile methods
   async getProfile(token: string): Promise<UserProfile> {
-    return this.get<UserProfile>('/api/users', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.get<UserProfile>('/api/users', { Authorization: `Bearer ${token}` });
   }
 
   async updateProfile(data: UpdateProfileRequest, token: string): Promise<UserProfile> {
-    return this.client
-      .patch<UserProfile>('/api/users', data, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => res.data);
+    return this.patch<UserProfile>('/api/users', data, { Authorization: `Bearer ${token}` });
   }
 
   async deleteAccount(token: string): Promise<void> {
-    return this.delete<void>('/api/users', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.delete<void>('/api/users', { Authorization: `Bearer ${token}` });
   }
 
   // Address methods
   async getAddresses(token: string): Promise<Address[]> {
     const response = await this.get<{ addresses: Address[] }>('/api/users/addresses', {
-      headers: { Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
     });
     return response.addresses || [];
   }
 
   async createAddress(data: CreateAddressRequest, token: string): Promise<Address> {
-    return this.post<Address>('/api/users/addresses', data, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return this.post<Address>('/api/users/addresses', data, { Authorization: `Bearer ${token}` });
   }
 
   async updateAddress(
@@ -118,38 +108,32 @@ export class UserClient extends BaseClient {
     data: Partial<CreateAddressRequest>,
     token: string
   ): Promise<Address> {
-    return this.client
-      .patch<Address>(`/api/users/addresses/${addressId}`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => res.data);
+    return this.patch<Address>(`/api/users/addresses/${addressId}`, data, {
+      Authorization: `Bearer ${token}`,
+    });
   }
 
   async deleteAddress(addressId: string, token: string): Promise<void> {
     return this.delete<void>(`/api/users/addresses/${addressId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
     });
   }
 
   async setDefaultAddress(addressId: string, token: string): Promise<Address> {
-    return this.client
-      .patch<Address>(
-        `/api/users/addresses/${addressId}/default`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-      .then((res) => res.data);
+    return this.patch<Address>(
+      `/api/users/addresses/${addressId}/default`,
+      {},
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
   }
 
   // Payment method methods
   async getPaymentMethods(token: string): Promise<PaymentMethod[]> {
     const response = await this.get<{ paymentMethods: PaymentMethod[] }>(
       '/api/users/paymentmethods',
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { Authorization: `Bearer ${token}` }
     );
     return response.paymentMethods || [];
   }
@@ -159,7 +143,7 @@ export class UserClient extends BaseClient {
     token: string
   ): Promise<PaymentMethod> {
     return this.post<PaymentMethod>('/api/users/paymentmethods', data, {
-      headers: { Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
     });
   }
 
@@ -168,35 +152,31 @@ export class UserClient extends BaseClient {
     data: Partial<CreatePaymentMethodRequest>,
     token: string
   ): Promise<PaymentMethod> {
-    return this.client
-      .patch<PaymentMethod>(`/api/users/paymentmethods/${paymentId}`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => res.data);
+    return this.patch<PaymentMethod>(`/api/users/paymentmethods/${paymentId}`, data, {
+      Authorization: `Bearer ${token}`,
+    });
   }
 
   async deletePaymentMethod(paymentId: string, token: string): Promise<void> {
     return this.delete<void>(`/api/users/paymentmethods/${paymentId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
     });
   }
 
   async setDefaultPaymentMethod(paymentId: string, token: string): Promise<PaymentMethod> {
-    return this.client
-      .patch<PaymentMethod>(
-        `/api/users/paymentmethods/${paymentId}/default`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-      .then((res) => res.data);
+    return this.patch<PaymentMethod>(
+      `/api/users/paymentmethods/${paymentId}/default`,
+      {},
+      {
+        Authorization: `Bearer ${token}`,
+      }
+    );
   }
 
   // Wishlist methods
   async getWishlist(token: string): Promise<WishlistItem[]> {
     const response = await this.get<{ wishlist: WishlistItem[] }>('/api/users/wishlist', {
-      headers: { Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
     });
     return response.wishlist || [];
   }
@@ -206,42 +186,41 @@ export class UserClient extends BaseClient {
       '/api/users/wishlist',
       { productId },
       {
-        headers: { Authorization: `Bearer ${token}` },
+        Authorization: `Bearer ${token}`,
       }
     );
   }
 
   async removeFromWishlist(wishlistId: string, token: string): Promise<void> {
     return this.delete<void>(`/api/users/wishlist/${wishlistId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      Authorization: `Bearer ${token}`,
     });
   }
 
-  // Admin methods
-  async getAllUsers(headers: Record<string, string>): Promise<any[]> {
-    return this.get<any[]>('/api/admin/users', { headers });
-  }
-
-  async getUserById(userId: string, headers: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/admin/users/${userId}`, { headers });
-  }
-
-  async createUserAdmin(data: any, headers: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/admin/users', data, { headers });
-  }
-
-  async updateUserAdmin(
-    userId: string,
-    data: Partial<any>,
-    headers: Record<string, string>
+  /**
+   * Get comprehensive dashboard statistics for users
+   * This replaces multiple endpoints (getStats, getRecentUsers, getAnalytics)
+   * with a single optimized call to reduce network overhead
+   */
+  async getDashboardStats(
+    headers: Record<string, string>,
+    options?: {
+      includeRecent?: boolean;
+      recentLimit?: number;
+      analyticsPeriod?: string;
+    }
   ): Promise<any> {
-    return this.client
-      .patch<any>(`/api/admin/users/${userId}`, data, { headers })
-      .then((res) => res.data);
-  }
+    const params = new URLSearchParams();
+    if (options?.includeRecent) params.append('includeRecent', 'true');
+    if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
+    if (options?.analyticsPeriod) params.append('period', options.analyticsPeriod);
 
-  async deleteUserAdmin(userId: string, headers: Record<string, string>): Promise<void> {
-    return this.delete<void>(`/api/admin/users/${userId}`, { headers });
+    const queryString = params.toString();
+    const endpoint = queryString
+      ? `/api/admin/users/stats?${queryString}`
+      : '/api/admin/users/stats';
+
+    return this.get<any>(endpoint, headers);
   }
 }
 

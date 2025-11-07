@@ -1,11 +1,7 @@
 import { productClient, Product, TrendingCategory } from '@clients/product.client';
 import { inventoryClient, InventoryItem } from '@clients/inventory.client';
 import { enhanceProductsWithRatings, ProductData, ProductRatingData } from './product.aggregator';
-import logger from '@observability';
-import axios from 'axios';
-import config from '@config/index';
-
-const PRODUCT_SERVICE_URL = config.services.product;
+import logger from '../core/logger';
 
 export interface EnrichedProduct extends Product {
   inventory: {
@@ -149,13 +145,11 @@ export class StorefrontAggregator {
     // Step 1: Get more products than needed from Product Service (recently created)
     // We'll fetch 3x the limit to have enough candidates after filtering
     const candidateLimit = limit * 3;
-    const response = await axios.get(`${PRODUCT_SERVICE_URL}/api/products/trending`, {
-      params: { limit: candidateLimit },
-      headers: { 'X-Correlation-Id': correlationId },
-      timeout: 5000,
-    });
 
-    const products: ProductData[] = response.data || [];
+    // Use productClient instead of axios
+    const products: ProductData[] = (await productClient.getTrendingProducts(
+      candidateLimit
+    )) as any;
 
     if (products.length === 0) {
       logger.warn('No products returned from product service', { correlationId });

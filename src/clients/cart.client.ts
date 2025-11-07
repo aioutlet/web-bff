@@ -1,5 +1,5 @@
-import { BaseClient } from './base.client';
-import config from '@config/index';
+import { DaprBaseClient } from './dapr.base.client';
+import config from '@/core/config';
 
 interface CartItem {
   productId: string;
@@ -28,7 +28,7 @@ interface AddItemRequest {
 /**
  * Client for cart service operations
  */
-class CartClient extends BaseClient {
+class CartClient extends DaprBaseClient {
   constructor() {
     super(config.services.cart, 'cart-service');
   }
@@ -37,14 +37,14 @@ class CartClient extends BaseClient {
    * Get authenticated user's cart
    */
   async getCart(headers: Record<string, string>): Promise<Cart> {
-    return this.get<Cart>('/api/v1/cart', { headers });
+    return this.get<Cart>('/api/v1/cart', headers);
   }
 
   /**
    * Add item to authenticated user's cart
    */
   async addItem(item: AddItemRequest, headers: Record<string, string>): Promise<Cart> {
-    return this.post<Cart>('/api/v1/cart/items', item, { headers });
+    return this.post<Cart>('/api/v1/cart/items', item, headers);
   }
 
   /**
@@ -55,28 +55,28 @@ class CartClient extends BaseClient {
     quantity: number,
     headers: Record<string, string>
   ): Promise<Cart> {
-    return this.put<Cart>(`/api/v1/cart/items/${productId}`, { quantity }, { headers });
+    return this.put<Cart>(`/api/v1/cart/items/${productId}`, { quantity }, headers);
   }
 
   /**
    * Remove item from authenticated user's cart
    */
   async removeItem(productId: string, headers: Record<string, string>): Promise<Cart> {
-    return this.delete<Cart>(`/api/v1/cart/items/${productId}`, { headers });
+    return this.delete<Cart>(`/api/v1/cart/items/${productId}`, headers);
   }
 
   /**
    * Clear authenticated user's cart
    */
   async clearCart(headers: Record<string, string>): Promise<void> {
-    return this.delete<void>('/api/v1/cart', { headers });
+    return this.delete<void>('/api/v1/cart', headers);
   }
 
   /**
    * Transfer guest cart to authenticated user
    */
   async transferCart(guestId: string, headers: Record<string, string>): Promise<Cart> {
-    return this.post<Cart>('/api/v1/cart/transfer', { guestId }, { headers });
+    return this.post<Cart>('/api/v1/cart/transfer', { guestId }, headers);
   }
 
   /**

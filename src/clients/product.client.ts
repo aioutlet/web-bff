@@ -1,5 +1,5 @@
-import { BaseClient } from './base.client';
-import config from '@config/index';
+import { DaprBaseClient } from './dapr.base.client';
+import config from '@/core/config';
 
 export interface Product {
   id: string;
@@ -26,7 +26,7 @@ export interface TrendingCategory {
   };
 }
 
-export class ProductClient extends BaseClient {
+export class ProductClient extends DaprBaseClient {
   constructor() {
     super(config.services.product, 'product-service');
   }
@@ -59,28 +59,71 @@ export class ProductClient extends BaseClient {
     return response.total_count || 0;
   }
 
+  async getProductDetailsById(productId: string, headers?: Record<string, string>): Promise<any> {
+    return this.get<any>(`/api/products/${productId}`, headers);
+  }
+
+  async getProducts(
+    params?: Record<string, string>,
+    headers?: Record<string, string>
+  ): Promise<any> {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.get<any>(`/api/products/${queryString}`, headers);
+  }
+
+  async searchProducts(
+    params?: Record<string, string>,
+    headers?: Record<string, string>
+  ): Promise<any> {
+    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
+    return this.get<any>(`/api/products/search${queryString}`, headers);
+  }
+
   // Admin methods
   async getAllProducts(headers: Record<string, string>, params?: any): Promise<any> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/products${queryString}`, { headers });
+    return this.get<any>(`/api/products${queryString}`, headers);
   }
 
   async getProductById(productId: string, headers: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/products/${productId}`, { headers });
+    return this.get<any>(`/api/products/${productId}`, headers);
   }
 
   async createProduct(data: any, headers: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/products', data, { headers });
+    return this.post<any>('/api/products', data, headers);
   }
 
   async updateProduct(productId: string, data: any, headers: Record<string, string>): Promise<any> {
-    return this.client
-      .patch<any>(`/api/products/${productId}`, data, { headers })
-      .then((res) => res.data);
+    return this.patch<any>(`/api/products/${productId}`, data, headers);
   }
 
   async deleteProduct(productId: string, headers: Record<string, string>): Promise<void> {
-    return this.delete<void>(`/api/products/${productId}`, { headers });
+    return this.delete<void>(`/api/products/${productId}`, headers);
+  }
+
+  /**
+   * Get comprehensive dashboard statistics for products
+   * This replaces multiple endpoints with a single optimized call
+   */
+  async getDashboardStats(
+    headers: Record<string, string>,
+    options?: {
+      includeRecent?: boolean;
+      recentLimit?: number;
+      analyticsPeriod?: string;
+    }
+  ): Promise<any> {
+    const params = new URLSearchParams();
+    if (options?.includeRecent) params.append('includeRecent', 'true');
+    if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
+    if (options?.analyticsPeriod) params.append('period', options.analyticsPeriod);
+
+    const queryString = params.toString();
+    const endpoint = queryString
+      ? `/api/admin/products/stats?${queryString}`
+      : '/api/admin/products/stats';
+
+    return this.get<any>(endpoint, headers);
   }
 }
 
