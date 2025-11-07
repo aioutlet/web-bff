@@ -23,7 +23,7 @@ class Logger {
 
     // Get service name early for path calculation
     const serviceName =
-      process.env.SERVICE_NAME || config.serviceName || envConfig.serviceName || 'web-bff';
+      process.env.NAME || config.serviceName || envConfig.serviceName || 'web-bff';
 
     // Merge configurations: env vars > passed config > env defaults > global defaults
     // All values are overridden by environment variables
@@ -33,7 +33,7 @@ class Logger {
       ...config,
       // Override with environment variables
       serviceName: serviceName,
-      version: process.env.SERVICE_VERSION || '1.0.0',
+      version: process.env.VERSION || '1.0.0',
       environment: environment,
       logLevel: (process.env.LOG_LEVEL ||
         config.logLevel ||
