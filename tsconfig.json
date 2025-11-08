@@ -24,6 +24,7 @@
       "@/*": ["src/*"],
       "@config/*": ["src/config/*"],
       "@middleware/*": ["src/middleware/*"],
+      "@controllers/*": ["src/controllers/*"],
       "@clients/*": ["src/clients/*"],
       "@aggregators/*": ["src/aggregators/*"],
       "@routes/*": ["src/routes/*"],

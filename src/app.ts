@@ -4,7 +4,8 @@ import config from '@/core/config';
 import routes from '@routes/index';
 import { correlationIdMiddleware } from '@middleware/correlation-id.middleware';
 import { errorMiddleware } from '@middleware/error.middleware';
-import healthRoutes from '@routes/health.routes';
+import operationalRoutes from '@routes/operational.routes';
+import { metrics } from '@controllers/operational.controller';
 
 const app: Application = express();
 
@@ -27,8 +28,9 @@ app.use(express.urlencoded({ extended: true }));
 // Custom middleware
 app.use(correlationIdMiddleware);
 
-// Health check route (no /api prefix)
-app.use('/health', healthRoutes);
+// Operational routes (no /api prefix)
+app.use('/health', operationalRoutes);
+app.get('/metrics', metrics);
 
 // API routes
 app.use('/api', routes);
