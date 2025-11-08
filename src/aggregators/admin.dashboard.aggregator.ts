@@ -85,6 +85,36 @@ export class AdminDashboardAggregator {
       reviewClient.getDashboardStats(headers, { includeRecent: false }),
     ]);
 
+    // Log any rejected promises for debugging
+    if (userStats.status === 'rejected') {
+      logger.error('User stats fetch failed', {
+        error: userStats.reason?.message || userStats.reason,
+        stack: userStats.reason?.stack,
+        correlationId,
+      });
+    }
+    if (orderStats.status === 'rejected') {
+      logger.error('Order stats fetch failed', {
+        error: orderStats.reason?.message || orderStats.reason,
+        stack: orderStats.reason?.stack,
+        correlationId,
+      });
+    }
+    if (productStats.status === 'rejected') {
+      logger.error('Product stats fetch failed', {
+        error: productStats.reason?.message || productStats.reason,
+        stack: productStats.reason?.stack,
+        correlationId,
+      });
+    }
+    if (reviewStats.status === 'rejected') {
+      logger.error('Review stats fetch failed', {
+        error: reviewStats.reason?.message || reviewStats.reason,
+        stack: reviewStats.reason?.stack,
+        correlationId,
+      });
+    }
+
     try {
       // Process user stats
       const userStatsData =

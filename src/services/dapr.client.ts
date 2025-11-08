@@ -5,17 +5,24 @@ interface InvokeMetadata {
 }
 
 class DaprClientWrapper {
-  private client: DaprClient;
+  private client: DaprClient | null = null;
   private daprHost: string;
   private daprPort: string;
 
   constructor() {
     this.daprHost = process.env.DAPR_HOST || '127.0.0.1';
     this.daprPort = process.env.DAPR_HTTP_PORT || '3600';
-    this.client = new DaprClient({
-      daprHost: this.daprHost,
-      daprPort: this.daprPort,
-    });
+    // Don't initialize client here - lazy load only when needed
+  }
+
+  private ensureClient(): DaprClient {
+    if (!this.client) {
+      this.client = new DaprClient({
+        daprHost: this.daprHost,
+        daprPort: this.daprPort,
+      });
+    }
+    return this.client;
   }
 
   /**
@@ -35,13 +42,8 @@ class DaprClientWrapper {
     metadata?: InvokeMetadata
   ): Promise<T> {
     try {
-      const response = await this.client.invoker.invoke(
-        appId,
-        methodName,
-        httpMethod,
-        data,
-        metadata
-      );
+      const client = this.ensureClient();
+      const response = await client.invoker.invoke(appId, methodName, httpMethod, data, metadata);
       return response as T;
     } catch (error: any) {
       console.error(`[Dapr] Service invocation failed: ${appId}/${methodName}`, {
@@ -61,7 +63,8 @@ class DaprClientWrapper {
   async publishEvent(topicName: string, eventData: any): Promise<void> {
     const pubsubName = process.env.DAPR_PUBSUB_NAME || 'rabbitmq-pubsub';
     try {
-      await this.client.pubsub.publish(pubsubName, topicName, eventData);
+      const client = this.ensureClient();
+      await client.pubsub.publish(pubsubName, topicName, eventData);
       console.log(`[Dapr] Event published to topic: ${topicName}`);
     } catch (error: any) {
       console.error(`[Dapr] Failed to publish event to ${topicName}`, {
@@ -76,7 +79,7 @@ class DaprClientWrapper {
    * Get the underlying Dapr client (for advanced use cases)
    */
   getClient(): DaprClient {
-    return this.client;
+    return this.ensureClient();
   }
 }
 
