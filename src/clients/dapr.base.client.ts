@@ -34,7 +34,7 @@ export class DaprBaseClient {
       'product-service': 8003,
       'inventory-service': 8004,
       'cart-service': 8005,
-      'order-service': 5001,
+      'order-service': 5088,
       'payment-service': 5002,
       'review-service': 9001,
       'admin-service': 8008,

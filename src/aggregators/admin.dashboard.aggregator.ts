@@ -65,22 +65,29 @@ export class AdminDashboardAggregator {
   /**
    * Aggregates dashboard statistics from multiple microservices
    * Now uses optimized getDashboardStats() endpoints - reduces from 10+ calls to 4 parallel calls
+   * @param includeRecent - if true, fetches recent orders/users in same call (no duplicate requests)
+   * @param recentLimit - number of recent items to fetch
    */
   async getDashboardStats(
     correlationId: string,
-    authHeaders: Record<string, string>
-  ): Promise<DashboardStats> {
-    logger.info('Aggregating dashboard stats from microservices', { correlationId });
+    authHeaders: Record<string, string>,
+    options?: { includeRecent?: boolean; recentLimit?: number }
+  ): Promise<DashboardStats & { recentOrders?: RecentOrder[]; recentUsers?: RecentUser[] }> {
+    logger.info('Aggregating dashboard stats from microservices', { correlationId, options });
 
     const headers = {
       'x-correlation-id': correlationId,
       ...authHeaders,
     };
 
+    const includeRecent = options?.includeRecent || false;
+    const recentLimit = options?.recentLimit || 10;
+
     // Single optimized call per service - each returns comprehensive dashboard data
+    // If includeRecent=true, this will get stats + recent data in ONE call (no duplicates)
     const [userStats, orderStats, productStats, reviewStats] = await Promise.allSettled([
-      userClient.getDashboardStats(headers, { includeRecent: false }),
-      orderClient.getDashboardStats(headers, { includeRecent: false }),
+      userClient.getDashboardStats(headers, { includeRecent, recentLimit }),
+      orderClient.getDashboardStats(headers, { includeRecent, recentLimit }),
       productClient.getDashboardStats(headers, { includeRecent: false }),
       reviewClient.getDashboardStats(headers, { includeRecent: false }),
     ]);
@@ -141,7 +148,10 @@ export class AdminDashboardAggregator {
           : { total: 0, pending: 0, averageRating: 0, growth: 0 };
 
       // Aggregate the stats from different services
-      const aggregatedStats: DashboardStats = {
+      const aggregatedStats: DashboardStats & {
+        recentOrders?: RecentOrder[];
+        recentUsers?: RecentUser[];
+      } = {
         users: {
           total: userStatsData.total || 0,
           active: userStatsData.active || 0,
@@ -169,6 +179,25 @@ export class AdminDashboardAggregator {
           growth: reviewStatsData.growth || 0,
         },
       };
+
+      // Add recent data if it was requested (already fetched in the same calls above)
+      if (includeRecent) {
+        // Map recent orders from order service response
+        if (orderStatsData.recentOrders && Array.isArray(orderStatsData.recentOrders)) {
+          aggregatedStats.recentOrders = orderStatsData.recentOrders.map((order: any) => ({
+            id: order.id,
+            customer: order.customerName || order.customerId,
+            total: order.totalAmount,
+            status: this.getOrderStatusName(order.status),
+            createdAt: order.createdAt,
+          }));
+        }
+
+        // Add recent users from user service response
+        if (userStatsData.recentUsers && Array.isArray(userStatsData.recentUsers)) {
+          aggregatedStats.recentUsers = userStatsData.recentUsers;
+        }
+      }
 
       logger.info('Dashboard stats aggregated successfully', {
         correlationId,
@@ -204,6 +233,7 @@ export class AdminDashboardAggregator {
 
   /**
    * Fetches recent orders from order service
+   * Uses optimized getDashboardStats with includeRecent option
    */
   async getRecentOrders(
     limit: number,
@@ -218,19 +248,19 @@ export class AdminDashboardAggregator {
     };
 
     try {
-      const orderList = await orderClient.getAllOrders(headers);
+      const response = await orderClient.getDashboardStats(headers, {
+        includeRecent: true,
+        recentLimit: limit,
+      });
 
-      // Sort by creation date (newest first) and limit
-      const recentOrders = orderList
-        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit)
-        .map((order: any) => ({
-          id: order.id,
-          customer: order.customerName,
-          total: order.totalAmount,
-          status: this.getOrderStatusName(order.status),
-          createdAt: order.createdAt,
-        }));
+      // Map recent orders from the response
+      const recentOrders = (response.recentOrders || []).map((order: any) => ({
+        id: order.id,
+        customer: order.customerName || order.customerId, // Use customer name if available
+        total: order.totalAmount,
+        status: this.getOrderStatusName(order.status),
+        createdAt: order.createdAt,
+      }));
 
       return recentOrders;
     } catch (error) {

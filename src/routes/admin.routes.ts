@@ -19,30 +19,29 @@ router.get('/dashboard/stats', async (req: Request, res: Response) => {
   const includeRecent = req.query.includeRecent === 'true';
   const recentLimit = parseInt(req.query.recentLimit as string) || 10;
 
+  logger.info('[BFF] Dashboard stats endpoint called', {
+    correlationId,
+    includeRecent,
+    recentLimit,
+    timestamp: new Date().toISOString(),
+  });
+
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
     };
 
-    // Get base stats
-    const stats = await adminDashboardAggregator.getDashboardStats(correlationId, authHeaders);
+    // Get stats with optional recent data in a SINGLE aggregated call (no duplicate requests)
+    const stats = await adminDashboardAggregator.getDashboardStats(correlationId, authHeaders, {
+      includeRecent,
+      recentLimit,
+    });
 
-    // Optionally add recent data if requested
-    let response: any = { ...stats };
-
-    if (includeRecent) {
-      const [recentOrders, recentUsers] = await Promise.allSettled([
-        adminDashboardAggregator.getRecentOrders(recentLimit, correlationId, authHeaders),
-        adminDashboardAggregator.getRecentUsers(recentLimit, correlationId, authHeaders),
-      ]);
-
-      response.recentOrders = recentOrders.status === 'fulfilled' ? recentOrders.value : [];
-      response.recentUsers = recentUsers.status === 'fulfilled' ? recentUsers.value : [];
-    }
+    logger.info('[BFF] Dashboard stats completed successfully', { correlationId });
 
     res.json({
       success: true,
-      data: response,
+      data: stats,
     });
   } catch (error) {
     logger.error('Failed to fetch dashboard stats', { error, correlationId });
