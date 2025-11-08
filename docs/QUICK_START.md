@@ -173,7 +173,7 @@ Each request has a correlation ID for tracing across services.
 2. **Start backend services** (product, inventory, review)
 3. **Run the BFF**: `npm run dev`
 4. **Test endpoints** using curl or Postman
-5. **Update web-ui** to call BFF instead of individual services
+5. **Update customer-ui** to call BFF instead of individual services
 
 ## 📚 API Documentation
 
