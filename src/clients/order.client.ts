@@ -79,7 +79,7 @@ export class OrderClient extends DaprBaseClient {
   }
 
   async getOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
-    return this.get<Order>(`/api/orders/${orderId}`, headers);
+    return this.get<Order>(`/api/admin/orders/${orderId}`, headers);
   }
 
   async updateOrderStatus(
@@ -87,11 +87,11 @@ export class OrderClient extends DaprBaseClient {
     data: any,
     headers: Record<string, string>
   ): Promise<Order> {
-    return this.put<Order>(`/api/orders/${orderId}/status`, data, headers);
+    return this.put<Order>(`/api/admin/orders/${orderId}/status`, data, headers);
   }
 
   async deleteOrder(orderId: string, headers: Record<string, string>): Promise<void> {
-    return this.delete<void>(`/api/orders/${orderId}`, headers);
+    return this.delete<void>(`/api/admin/orders/${orderId}`, headers);
   }
 
   // Customer methods
