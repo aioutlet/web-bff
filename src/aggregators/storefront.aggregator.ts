@@ -1,6 +1,5 @@
 import { productClient, Product, TrendingCategory } from '@clients/product.client';
 import { inventoryClient, InventoryItem } from '@clients/inventory.client';
-import { enhanceProductsWithRatings, ProductData, ProductRatingData } from './product.aggregator';
 import logger from '../core/logger';
 
 export interface EnrichedProduct extends Product {
@@ -27,23 +26,32 @@ export interface EnrichedCategory extends TrendingCategory {
 export class StorefrontAggregator {
   /**
    * Get trending products with inventory and review data
-   * Uses full trending algorithm with review-based scoring
+   * OPTIMIZED: Single call to product service /storefront-data endpoint
+   * Reduces service calls from 3-4 to 2 (storefront data + inventory)
    */
   async getTrendingProducts(limit: number = 4, correlationId?: string): Promise<EnrichedProduct[]> {
     try {
       const cid = correlationId || `storefront-trending-${Date.now()}`;
 
-      // Get trending products with review scoring
-      const trendingProducts = await this.calculateTrendingProducts(cid, limit);
+      logger.info('Fetching storefront data (trending products)', {
+        correlationId: cid,
+        limit,
+      });
 
-      if (!trendingProducts || trendingProducts.length === 0) {
+      // Single call to product service for trending products
+      // Product service calculates trending scores using MongoDB aggregation
+      // Note: FastAPI requires minimum value of 1, so we pass 1 for categories_limit even though we only need products
+      const { trending_products } = await productClient.getStorefrontData(limit, 1);
+
+      if (!trending_products || trending_products.length === 0) {
+        logger.warn('No trending products returned', { correlationId: cid });
         return [];
       }
 
-      // Convert to EnrichedProduct format and add inventory data
-      const skus = trendingProducts.map((p) => p.sku).filter((sku): sku is string => Boolean(sku));
+      // Extract SKUs for inventory lookup
+      const skus = trending_products.map((p) => p.sku).filter((sku): sku is string => Boolean(sku));
 
-      // Fetch inventory data
+      // Fetch inventory data in parallel
       let inventoryMap = new Map<string, InventoryItem>();
       try {
         const inventoryData = await inventoryClient.getInventoryBatch(skus);
@@ -56,7 +64,7 @@ export class StorefrontAggregator {
       }
 
       // Map to EnrichedProduct format
-      const enrichedProducts: EnrichedProduct[] = trendingProducts.map((product) => {
+      const enrichedProducts: EnrichedProduct[] = trending_products.map((product) => {
         const inventory = product.sku ? inventoryMap.get(product.sku) : undefined;
 
         return {
@@ -67,14 +75,14 @@ export class StorefrontAggregator {
           category: product.category || '',
           sku: product.sku || '',
           images: product.images,
-          isActive: product.is_active,
+          isActive: product.isActive,
           inventory: {
             inStock: inventory ? inventory.quantityAvailable > 0 : false,
             availableQuantity: inventory?.quantityAvailable || 0,
           },
           reviews: {
-            averageRating: product.ratingDetails.averageRating,
-            reviewCount: product.ratingDetails.totalReviews,
+            averageRating: (product as any).review_aggregates?.average_rating || 0,
+            reviewCount: (product as any).review_aggregates?.total_review_count || 0,
           },
         };
       });
@@ -93,19 +101,29 @@ export class StorefrontAggregator {
 
   /**
    * Get trending categories with enriched display data
+   * OPTIMIZED: Single call to product service /storefront-data endpoint
    */
   async getTrendingCategories(limit: number = 5): Promise<EnrichedCategory[]> {
     try {
-      const categories = await productClient.getTrendingCategories(limit);
+      logger.info('Fetching storefront data (trending categories)', { limit });
 
-      if (!categories || categories.length === 0) {
+      // Single call to product service for trending categories
+      // Note: FastAPI requires minimum value of 1, so we pass 1 for products_limit even though we only need categories
+      const { trending_categories } = await productClient.getStorefrontData(1, limit);
+
+      if (!trending_categories || trending_categories.length === 0) {
+        logger.warn('No trending categories returned');
         return [];
       }
 
-      // Enrich categories with display information and accurate counts
+      // Enrich categories with display information
       const enrichedCategories = await Promise.all(
-        categories.map(async (category) => await this.enrichCategory(category))
+        trending_categories.map(async (category) => await this.enrichCategory(category))
       );
+
+      logger.info('Trending categories aggregation complete', {
+        count: enrichedCategories.length,
+      });
 
       return enrichedCategories;
     } catch (error) {
@@ -124,110 +142,6 @@ export class StorefrontAggregator {
       logger.error('Error getting categories', { error });
       throw error;
     }
-  }
-
-  /**
-   * Calculate trending products with review-based scoring
-   * Implements Amazon-style trending algorithm:
-   * - Base score: average_rating × num_reviews
-   * - Recency boost: Products created in last 30 days get 1.5x multiplier
-   * - Minimum threshold: At least 3 reviews required
-   */
-  private async calculateTrendingProducts(
-    correlationId: string,
-    limit: number = 4
-  ): Promise<(ProductData & { ratingDetails: ProductRatingData; trendingScore: number })[]> {
-    logger.info('Calculating trending products with review data', {
-      correlationId,
-      limit,
-    });
-
-    // Step 1: Get more products than needed from Product Service (recently created)
-    // We'll fetch 3x the limit to have enough candidates after filtering
-    const candidateLimit = limit * 3;
-
-    // Use productClient instead of axios
-    const products: ProductData[] = (await productClient.getTrendingProducts(
-      candidateLimit
-    )) as any;
-
-    if (products.length === 0) {
-      logger.warn('No products returned from product service', { correlationId });
-      return [];
-    }
-
-    logger.info('Fetched candidate products', {
-      correlationId,
-      candidateCount: products.length,
-    });
-
-    // Step 2: Enhance with review data
-    const productsWithRatings = await enhanceProductsWithRatings(products, correlationId);
-
-    // Step 3: Filter products with at least 3 reviews
-    let qualifiedProducts = productsWithRatings.filter((p) => p.ratingDetails.totalReviews >= 3);
-
-    // Fallback: If not enough products with 3+ reviews, use products with any reviews
-    if (qualifiedProducts.length < limit) {
-      logger.info('Not enough products with 3+ reviews, using products with any reviews', {
-        correlationId,
-        productsWithMinReviews: qualifiedProducts.length,
-      });
-
-      qualifiedProducts = productsWithRatings
-        .filter((p) => p.ratingDetails.totalReviews > 0)
-        .slice(0, candidateLimit);
-    }
-
-    // Final fallback: If still not enough, use all products
-    if (qualifiedProducts.length < limit) {
-      logger.info('Not enough products with reviews, using all available products', {
-        correlationId,
-      });
-      qualifiedProducts = productsWithRatings;
-    }
-
-    logger.info('Qualified products after review filter', {
-      correlationId,
-      qualifiedCount: qualifiedProducts.length,
-      filteredOut: products.length - qualifiedProducts.length,
-    });
-
-    // Step 4: Calculate trending score for each product
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    const productsWithScores = qualifiedProducts.map((product) => {
-      // Base trending score: rating × reviews
-      const baseScore = product.ratingDetails.averageRating * product.ratingDetails.totalReviews;
-
-      // Check if product is recent (created in last 30 days)
-      const createdAt = new Date(product.created_at);
-      const isRecent = createdAt >= thirtyDaysAgo;
-
-      // Apply recency boost: 50% bonus for recent products
-      const trendingScore = isRecent ? baseScore * 1.5 : baseScore;
-
-      return {
-        ...product,
-        trendingScore,
-        isRecent, // For debugging/logging
-      };
-    });
-
-    // Step 5: Sort by trending score (highest first) and limit results
-    const trendingProducts = productsWithScores
-      .sort((a, b) => b.trendingScore - a.trendingScore)
-      .slice(0, limit);
-
-    logger.info('Trending products calculation complete', {
-      correlationId,
-      returnedCount: trendingProducts.length,
-      topScore: trendingProducts[0]?.trendingScore || 0,
-      recentProductCount: trendingProducts.filter((p) => p.isRecent).length,
-    });
-
-    return trendingProducts;
   }
 
   /**

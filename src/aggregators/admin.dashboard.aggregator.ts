@@ -54,13 +54,6 @@ export interface RecentUser {
   createdAt: string;
 }
 
-export interface AnalyticsData {
-  period: string;
-  users: any;
-  orders: any;
-  products: any;
-}
-
 export class AdminDashboardAggregator {
   /**
    * Aggregates dashboard statistics from multiple microservices
@@ -188,7 +181,7 @@ export class AdminDashboardAggregator {
             id: order.id,
             customer: order.customerName || order.customerId,
             total: order.totalAmount,
-            status: this.getOrderStatusName(order.status),
+            status: order.status.toLowerCase(), // Already a string from backend
             createdAt: order.createdAt,
           }));
         }
@@ -229,135 +222,6 @@ export class AdminDashboardAggregator {
         reviews: { total: 0, pending: 0, averageRating: 0, growth: 0 },
       };
     }
-  }
-
-  /**
-   * Fetches recent orders from order service
-   * Uses optimized getDashboardStats with includeRecent option
-   */
-  async getRecentOrders(
-    limit: number,
-    correlationId: string,
-    authHeaders: Record<string, string>
-  ): Promise<RecentOrder[]> {
-    logger.info('Fetching recent orders for dashboard', { correlationId, limit });
-
-    const headers = {
-      'x-correlation-id': correlationId,
-      ...authHeaders,
-    };
-
-    try {
-      const response = await orderClient.getDashboardStats(headers, {
-        includeRecent: true,
-        recentLimit: limit,
-      });
-
-      // Map recent orders from the response
-      const recentOrders = (response.recentOrders || []).map((order: any) => ({
-        id: order.id,
-        customer: order.customerName || order.customerId, // Use customer name if available
-        total: order.totalAmount,
-        status: this.getOrderStatusName(order.status),
-        createdAt: order.createdAt,
-      }));
-
-      return recentOrders;
-    } catch (error) {
-      logger.error('Failed to fetch recent orders', { error, correlationId });
-      return [];
-    }
-  }
-
-  /**
-   * Helper to convert order status to display name
-   */
-  private getOrderStatusName(status: number | string): string {
-    const statusMap: Record<string | number, string> = {
-      0: 'pending',
-      1: 'processing',
-      2: 'shipped',
-      3: 'completed',
-      4: 'cancelled',
-      Created: 'pending',
-      Processing: 'processing',
-      Shipped: 'shipped',
-      Delivered: 'completed',
-      Cancelled: 'cancelled',
-    };
-    return statusMap[status] || 'pending';
-  }
-
-  /**
-   * Fetches recent users from user service
-   * Uses optimized getDashboardStats with includeRecent option
-   */
-  async getRecentUsers(
-    limit: number,
-    correlationId: string,
-    authHeaders: Record<string, string>
-  ): Promise<RecentUser[]> {
-    logger.info('Fetching recent users for dashboard', { correlationId, limit });
-
-    const headers = {
-      'x-correlation-id': correlationId,
-      ...authHeaders,
-    };
-
-    try {
-      const response = await userClient.getDashboardStats(headers, {
-        includeRecent: true,
-        recentLimit: limit,
-      });
-
-      return response.recentUsers || [];
-    } catch (error) {
-      logger.error('Failed to fetch recent users', { error, correlationId });
-      return [];
-    }
-  }
-
-  /**
-   * Aggregates analytics data from multiple services
-   * Uses optimized getDashboardStats with analytics period option
-   */
-  async getAnalyticsData(
-    period: string,
-    correlationId: string,
-    authHeaders: Record<string, string>
-  ): Promise<AnalyticsData> {
-    logger.info('Fetching dashboard analytics', { correlationId, period });
-
-    const headers = {
-      'x-correlation-id': correlationId,
-      ...authHeaders,
-    };
-
-    // Parallel calls for analytics data from multiple services
-    const [userAnalytics, orderAnalytics, productAnalytics] = await Promise.allSettled([
-      userClient.getDashboardStats(headers, { analyticsPeriod: period }),
-      orderClient.getDashboardStats(headers, { analyticsPeriod: period }),
-      productClient.getDashboardStats(headers, { analyticsPeriod: period }),
-    ]);
-
-    const analytics: AnalyticsData = {
-      period,
-      users: userAnalytics.status === 'fulfilled' ? userAnalytics.value?.analytics : null,
-      orders: orderAnalytics.status === 'fulfilled' ? orderAnalytics.value?.analytics : null,
-      products: productAnalytics.status === 'fulfilled' ? productAnalytics.value?.analytics : null,
-    };
-
-    logger.info('Analytics data aggregated', {
-      correlationId,
-      period,
-      servicesResponded: {
-        users: userAnalytics.status === 'fulfilled',
-        orders: orderAnalytics.status === 'fulfilled',
-        products: productAnalytics.status === 'fulfilled',
-      },
-    });
-
-    return analytics;
   }
 }
 

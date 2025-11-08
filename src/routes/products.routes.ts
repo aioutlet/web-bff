@@ -2,11 +2,7 @@ import { Router, Response } from 'express';
 import { productClient } from '@clients/product.client';
 import logger from '../core/logger';
 import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
-import {
-  aggregateProductWithReviews,
-  getProductReviews,
-  enhanceProductsWithRatings,
-} from '@aggregators/product.aggregator';
+import { getProductReviews } from '@aggregators/product.aggregator';
 
 const router = Router();
 
@@ -53,23 +49,14 @@ router.get('/', async (req: RequestWithCorrelationId, res: Response) => {
     params.limit = limit as string;
 
     // Call product-service using Dapr client
+    // Products already include review_aggregates
     const response = await productClient.getProducts(params, {
       'X-Correlation-Id': req.correlationId || 'no-correlation',
     });
 
-    // Enhance products with rating data from review service
-    const products = response.products || [];
-    const enhancedProducts = await enhanceProductsWithRatings(
-      products,
-      req.correlationId || 'no-correlation'
-    );
-
     res.json({
       success: true,
-      data: {
-        ...response,
-        products: enhancedProducts,
-      },
+      data: response,
     });
   } catch (error) {
     logger.error('Error in /api/products', {
@@ -143,19 +130,10 @@ router.get('/search', async (req: RequestWithCorrelationId, res: Response) => {
       'X-Correlation-Id': req.correlationId || 'no-correlation',
     });
 
-    // Enhance products with rating data from review service
-    const products = response.products || [];
-    const enhancedProducts = await enhanceProductsWithRatings(
-      products,
-      req.correlationId || 'no-correlation'
-    );
-
+    // Products already include review_aggregates
     return res.json({
       success: true,
-      data: {
-        ...response,
-        products: enhancedProducts,
-      },
+      data: response,
     });
   } catch (error) {
     logger.error('Error in /api/products/search', {
@@ -182,20 +160,15 @@ router.get('/search', async (req: RequestWithCorrelationId, res: Response) => {
 router.get('/:id', async (req: RequestWithCorrelationId, res: Response) => {
   try {
     const { id } = req.params;
-    const { reviewLimit = '5' } = req.query;
-
-    logger.info('Fetching product by ID with reviews', {
+    logger.info('Fetching product by ID', {
       correlationId: req.correlationId,
       productId: id,
-      reviewLimit,
     });
 
-    // Aggregate product with top reviews
-    const product = await aggregateProductWithReviews(
-      id,
-      req.correlationId || 'no-correlation',
-      parseInt(reviewLimit as string, 10)
-    );
+    // Product already includes review_aggregates from product service
+    const product = await productClient.getProductDetailsById(id, {
+      'X-Correlation-Id': req.correlationId || 'no-correlation',
+    });
 
     res.json({
       success: true,

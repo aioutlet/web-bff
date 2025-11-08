@@ -1,6 +1,21 @@
-import { productClient } from '@clients/product.client';
 import { reviewClient } from '@clients/review.client';
 import logger from '../core/logger';
+
+export interface ReviewAggregates {
+  average_rating: number;
+  total_review_count: number;
+  verified_review_count: number;
+  rating_distribution: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+  };
+  recent_reviews: string[];
+  last_review_date?: string;
+  last_updated: string;
+}
 
 export interface ProductData {
   id: string;
@@ -18,6 +33,7 @@ export interface ProductData {
   colors: string[];
   sizes: string[];
   specifications: Record<string, string>;
+  review_aggregates?: ReviewAggregates;
   created_by: string;
   updated_by?: string;
   created_at: string;
@@ -49,169 +65,6 @@ interface ReviewData {
     createdAt: string;
     updatedAt: string;
   };
-}
-
-export interface ProductRatingData {
-  productId: string;
-  averageRating: number;
-  totalReviews: number;
-  ratingDistribution: {
-    1: number;
-    2: number;
-    3: number;
-    4: number;
-    5: number;
-  };
-  verifiedPurchaseRating?: number;
-  verifiedReviewsCount: number;
-  qualityMetrics: {
-    averageHelpfulScore: number;
-    totalHelpfulVotes: number;
-    reviewsWithMedia: number;
-    averageReviewLength: number;
-  };
-  trends: {
-    last30Days: {
-      totalReviews: number;
-      averageRating: number;
-    };
-    last7Days: {
-      totalReviews: number;
-      averageRating: number;
-    };
-  };
-  lastUpdated: string;
-}
-
-interface AggregatedProduct extends ProductData {
-  reviews: ReviewData[];
-  ratingDetails?: ProductRatingData;
-}
-
-/**
- * Aggregates product data with reviews from review-service
- * Uses fast product_ratings collection for performance
- *
- * @param productId - The ID of the product to aggregate
- * @param correlationId - Correlation ID for request tracing
- * @param limit - Maximum number of reviews to fetch (default: 5 for product detail page)
- * @param includeRatingDetails - Whether to include detailed rating analytics
- * @returns Aggregated product with reviews
- */
-export async function aggregateProductWithReviews(
-  productId: string,
-  correlationId: string,
-  limit: number = 5,
-  includeRatingDetails: boolean = true
-): Promise<AggregatedProduct> {
-  try {
-    logger.info('Aggregating product with reviews', {
-      correlationId,
-      productId,
-      reviewLimit: limit,
-      includeRatingDetails,
-    });
-
-    // Prepare parallel requests using Dapr clients
-    const requests: Promise<any>[] = [
-      // Product data from product service
-      productClient.getProductDetailsById(productId, { 'X-Correlation-Id': correlationId }),
-      // Individual reviews for display
-      reviewClient.getProductReviewsList(
-        productId,
-        {
-          status: 'approved',
-          limit,
-          sort: 'helpful',
-        },
-        { 'X-Correlation-Id': correlationId }
-      ),
-    ];
-
-    // Add rating details request if needed
-    if (includeRatingDetails) {
-      requests.push(
-        reviewClient.getProductRating(productId, { 'X-Correlation-Id': correlationId })
-      );
-    }
-
-    const responses = await Promise.allSettled(requests);
-
-    // Handle product response
-    const productResponse = responses[0];
-    if (productResponse.status === 'rejected') {
-      logger.error('Failed to fetch product', {
-        correlationId,
-        productId,
-        error: productResponse.reason,
-      });
-      throw new Error(`Failed to fetch product: ${productResponse.reason.message}`);
-    }
-
-    const product: ProductData = productResponse.value;
-
-    // Handle reviews response (non-critical - can proceed without reviews)
-    let reviews: ReviewData[] = [];
-    const reviewsResponse = responses[1];
-    if (reviewsResponse.status === 'fulfilled') {
-      reviews = reviewsResponse.value.data?.reviews || [];
-      logger.info('Successfully fetched reviews', {
-        correlationId,
-        productId,
-        reviewCount: reviews.length,
-      });
-    } else {
-      logger.warn('Failed to fetch reviews, proceeding without them', {
-        correlationId,
-        productId,
-        error: reviewsResponse.reason.message,
-      });
-    }
-
-    // Handle rating details response (enhances product data)
-    let ratingDetails: ProductRatingData | undefined;
-    if (includeRatingDetails && responses[2]) {
-      const ratingResponse = responses[2];
-      if (ratingResponse.status === 'fulfilled') {
-        ratingDetails = ratingResponse.value.data;
-        logger.info('Successfully fetched rating details', {
-          correlationId,
-          productId,
-          totalReviews: ratingDetails?.totalReviews,
-          averageRating: ratingDetails?.averageRating,
-        });
-      } else {
-        logger.warn('Failed to fetch rating details, using product service data', {
-          correlationId,
-          productId,
-          error: ratingResponse.reason.message,
-        });
-      }
-    }
-
-    // Combine product and reviews with enhanced rating data
-    const aggregatedProduct: AggregatedProduct = {
-      ...product,
-      reviews,
-      ratingDetails,
-    };
-
-    logger.info('Product aggregation successful', {
-      correlationId,
-      productId,
-      reviewCount: reviews.length,
-      hasRatingDetails: !!ratingDetails,
-    });
-
-    return aggregatedProduct;
-  } catch (error) {
-    logger.error('Error aggregating product with reviews', {
-      correlationId,
-      productId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error;
-  }
 }
 
 /**
@@ -275,193 +128,5 @@ export async function getProductReviews(
       error: error instanceof Error ? error.message : 'Unknown error',
     });
     throw error;
-  }
-}
-
-/**
- * Fetch product ratings in batch for product listings
- * Uses fast product_ratings collection for optimal performance
- *
- * @param productIds - Array of product IDs
- * @param correlationId - Correlation ID for request tracing
- * @returns Array of product ratings
- */
-export async function getProductRatingsBatch(
-  productIds: string[],
-  correlationId: string
-): Promise<ProductRatingData[]> {
-  try {
-    logger.info('Fetching product ratings batch', {
-      correlationId,
-      productCount: productIds.length,
-    });
-
-    if (productIds.length === 0) {
-      return [];
-    }
-
-    if (productIds.length > 100) {
-      throw new Error('Maximum 100 products per batch request');
-    }
-
-    const reviewData = await reviewClient.getReviewsBatch(productIds);
-
-    // Map ReviewAggregate to ProductRatingData
-    const ratings = reviewData.map((review) => ({
-      productId: review.productId,
-      averageRating: review.averageRating,
-      totalReviews: review.totalReviews,
-      ratingDistribution: review.ratingDistribution,
-      verifiedReviewsCount: 0, // Default value
-      qualityMetrics: {
-        averageHelpfulScore: 0,
-        totalHelpfulVotes: 0,
-        reviewsWithMedia: 0,
-        averageReviewLength: 0,
-      },
-      trends: {
-        last30Days: { totalReviews: 0, averageRating: 0 },
-        last7Days: { totalReviews: 0, averageRating: 0 },
-      },
-      lastUpdated: new Date().toISOString(),
-    }));
-
-    logger.info('Successfully fetched product ratings batch', {
-      correlationId,
-      requestedCount: productIds.length,
-      returnedCount: ratings.length,
-    });
-
-    return ratings;
-  } catch (error) {
-    logger.error('Error fetching product ratings batch', {
-      correlationId,
-      productCount: productIds.length,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    // Return default ratings for all products on error
-    return productIds.map((productId) => ({
-      productId,
-      averageRating: 0,
-      totalReviews: 0,
-      ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-      verifiedReviewsCount: 0,
-      qualityMetrics: {
-        averageHelpfulScore: 0,
-        totalHelpfulVotes: 0,
-        reviewsWithMedia: 0,
-        averageReviewLength: 0,
-      },
-      trends: {
-        last30Days: { totalReviews: 0, averageRating: 0 },
-        last7Days: { totalReviews: 0, averageRating: 0 },
-      },
-      lastUpdated: new Date().toISOString(),
-    }));
-  }
-}
-
-/**
- * Enhance products list with rating data
- * Efficiently fetches rating data for multiple products
- * Adds both ratingDetails object and backward-compatible average_rating/num_reviews fields
- *
- * @param products - Array of product data
- * @param correlationId - Correlation ID for request tracing
- * @returns Products enhanced with rating details
- */
-export async function enhanceProductsWithRatings(
-  products: ProductData[],
-  correlationId: string
-): Promise<
-  (ProductData & {
-    ratingDetails: ProductRatingData;
-    average_rating: number;
-    num_reviews: number;
-  })[]
-> {
-  try {
-    if (products.length === 0) {
-      return [];
-    }
-
-    const productIds = products.map((p) => p.id);
-    const ratings = await getProductRatingsBatch(productIds, correlationId);
-
-    // Create a map for quick lookup
-    const ratingMap = ratings.reduce(
-      (acc, rating) => {
-        acc[rating.productId] = rating;
-        return acc;
-      },
-      {} as Record<string, ProductRatingData>
-    );
-
-    // Enhance products with rating data
-    return products.map((product) => {
-      const ratingDetails = ratingMap[product.id] || {
-        productId: product.id,
-        averageRating: 0,
-        totalReviews: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        verifiedReviewsCount: 0,
-        qualityMetrics: {
-          averageHelpfulScore: 0,
-          totalHelpfulVotes: 0,
-          reviewsWithMedia: 0,
-          averageReviewLength: 0,
-        },
-        trends: {
-          last30Days: { totalReviews: 0, averageRating: 0 },
-          last7Days: { totalReviews: 0, averageRating: 0 },
-        },
-        lastUpdated: new Date().toISOString(),
-      };
-
-      return {
-        ...product,
-        // Add rating data to the main product object for frontend compatibility
-        average_rating: ratingDetails.averageRating,
-        num_reviews: ratingDetails.totalReviews,
-        ratingDetails, // Keep detailed rating data for advanced use cases
-      };
-    });
-  } catch (error) {
-    logger.error('Error enhancing products with ratings', {
-      correlationId,
-      productCount: products.length,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-
-    // Return products without enhanced rating data on error
-    return products.map((product) => {
-      const defaultRatingDetails = {
-        productId: product.id,
-        averageRating: 0,
-        totalReviews: 0,
-        ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-        verifiedReviewsCount: 0,
-        qualityMetrics: {
-          averageHelpfulScore: 0,
-          totalHelpfulVotes: 0,
-          reviewsWithMedia: 0,
-          averageReviewLength: 0,
-        },
-        trends: {
-          last30Days: { totalReviews: 0, averageRating: 0 },
-          last7Days: { totalReviews: 0, averageRating: 0 },
-        },
-        lastUpdated: new Date().toISOString(),
-      };
-
-      return {
-        ...product,
-        // Add rating data to the main product object for frontend compatibility
-        average_rating: defaultRatingDetails.averageRating,
-        num_reviews: defaultRatingDetails.totalReviews,
-        ratingDetails: defaultRatingDetails,
-      };
-    });
   }
 }
