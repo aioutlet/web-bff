@@ -36,7 +36,7 @@ export class DaprBaseClient {
       'cart-service': 8005,
       'order-service': 5001,
       'payment-service': 5002,
-      'review-service': 8007,
+      'review-service': 9001,
       'admin-service': 8008,
     };
     return portMap[serviceName] || 3000;
