@@ -8,6 +8,7 @@ import { userClient } from '../clients/user.client';
 import { orderClient } from '../clients/order.client';
 import { productClient } from '../clients/product.client';
 import { reviewClient } from '../clients/review.client';
+import { inventoryClient } from '../clients/inventory.client';
 
 export interface DashboardStats {
   users: {
@@ -27,8 +28,14 @@ export interface DashboardStats {
   products: {
     total: number;
     active: number;
-    lowStock: number;
-    outOfStock: number;
+  };
+  inventory: {
+    productsWithStock: number;
+    lowStockCount: number;
+    outOfStockCount: number;
+    totalInventoryValue: number;
+    totalUnits: number;
+    totalItems: number;
   };
   reviews: {
     total: number;
@@ -78,12 +85,14 @@ export class AdminDashboardAggregator {
 
     // Single optimized call per service - each returns comprehensive dashboard data
     // If includeRecent=true, this will get stats + recent data in ONE call (no duplicates)
-    const [userStats, orderStats, productStats, reviewStats] = await Promise.allSettled([
-      userClient.getDashboardStats(headers, { includeRecent, recentLimit }),
-      orderClient.getDashboardStats(headers, { includeRecent, recentLimit }),
-      productClient.getDashboardStats(headers, { includeRecent: false }),
-      reviewClient.getDashboardStats(headers, { includeRecent: false }),
-    ]);
+    const [userStats, orderStats, productStats, inventoryStats, reviewStats] =
+      await Promise.allSettled([
+        userClient.getDashboardStats(headers, { includeRecent, recentLimit }),
+        orderClient.getDashboardStats(headers, { includeRecent, recentLimit }),
+        productClient.getDashboardStats(headers, { includeRecent: false }),
+        inventoryClient.getDashboardStats(headers),
+        reviewClient.getDashboardStats(headers, { includeRecent: false }),
+      ]);
 
     // Log any rejected promises for debugging
     if (userStats.status === 'rejected') {
@@ -104,6 +113,13 @@ export class AdminDashboardAggregator {
       logger.error('Product stats fetch failed', {
         error: productStats.reason?.message || productStats.reason,
         stack: productStats.reason?.stack,
+        correlationId,
+      });
+    }
+    if (inventoryStats.status === 'rejected') {
+      logger.error('Inventory stats fetch failed', {
+        error: inventoryStats.reason?.message || inventoryStats.reason,
+        stack: inventoryStats.reason?.stack,
         correlationId,
       });
     }
@@ -130,9 +146,20 @@ export class AdminDashboardAggregator {
 
       // Process product stats
       const productStatsData =
-        productStats.status === 'fulfilled'
-          ? productStats.value
-          : { total: 0, active: 0, lowStock: 0, outOfStock: 0 };
+        productStats.status === 'fulfilled' ? productStats.value : { total: 0, active: 0 };
+
+      // Process inventory stats
+      const inventoryStatsData =
+        inventoryStats.status === 'fulfilled'
+          ? inventoryStats.value
+          : {
+              productsWithStock: 0,
+              lowStockCount: 0,
+              outOfStockCount: 0,
+              totalInventoryValue: 0,
+              totalUnits: 0,
+              totalItems: 0,
+            };
 
       // Process review stats
       const reviewStatsData =
@@ -162,8 +189,14 @@ export class AdminDashboardAggregator {
         products: {
           total: productStatsData.total || 0,
           active: productStatsData.active || 0,
-          lowStock: productStatsData.lowStock || 0,
-          outOfStock: productStatsData.outOfStock || 0,
+        },
+        inventory: {
+          productsWithStock: inventoryStatsData.productsWithStock || 0,
+          lowStockCount: inventoryStatsData.lowStockCount || 0,
+          outOfStockCount: inventoryStatsData.outOfStockCount || 0,
+          totalInventoryValue: inventoryStatsData.totalInventoryValue || 0,
+          totalUnits: inventoryStatsData.totalUnits || 0,
+          totalItems: inventoryStatsData.totalItems || 0,
         },
         reviews: {
           total: reviewStatsData.total || 0,
@@ -198,11 +231,13 @@ export class AdminDashboardAggregator {
           users: userStats.status === 'fulfilled',
           orders: orderStats.status === 'fulfilled',
           products: productStats.status === 'fulfilled',
+          inventory: inventoryStats.status === 'fulfilled',
           reviews: reviewStats.status === 'fulfilled',
         },
         stats: {
           users: userStatsData.total,
           orders: orderStatsData.total,
+          inventory: inventoryStatsData.totalItems,
         },
       });
 
@@ -218,7 +253,15 @@ export class AdminDashboardAggregator {
       return {
         users: { total: 0, active: 0, newThisMonth: 0, growth: 0 },
         orders: { total: 0, pending: 0, processing: 0, completed: 0, revenue: 0, growth: 0 },
-        products: { total: 0, active: 0, lowStock: 0, outOfStock: 0 },
+        products: { total: 0, active: 0 },
+        inventory: {
+          productsWithStock: 0,
+          lowStockCount: 0,
+          outOfStockCount: 0,
+          totalInventoryValue: 0,
+          totalUnits: 0,
+          totalItems: 0,
+        },
         reviews: { total: 0, pending: 0, averageRating: 0, growth: 0 },
       };
     }

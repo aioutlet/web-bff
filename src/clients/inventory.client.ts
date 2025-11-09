@@ -10,6 +10,16 @@ export interface InventoryItem {
   status: string;
 }
 
+export interface InventoryStats {
+  productsWithStock: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalInventoryValue: number;
+  totalUnits: number;
+  totalItems: number;
+  service: string;
+}
+
 export class InventoryClient extends DaprBaseClient {
   constructor() {
     super(config.services.inventory, 'inventory-service');
@@ -21,6 +31,10 @@ export class InventoryClient extends DaprBaseClient {
 
   async getInventoryBatch(skus: string[]): Promise<InventoryItem[]> {
     return this.post<InventoryItem[]>('/api/inventory/batch', { skus });
+  }
+
+  async getDashboardStats(headers?: Record<string, string>): Promise<InventoryStats> {
+    return this.get<InventoryStats>('/api/stats', headers);
   }
 }
 
