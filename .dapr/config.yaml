@@ -7,6 +7,10 @@ spec:
     - name: SchedulerReminders
       enabled: false
   tracing:
-    samplingRate: '0'
+    samplingRate: '1'
+    otel:
+      endpointAddress: 'http://localhost:4318'
+      isSecure: false
+      protocol: 'http'
   mtls:
     enabled: false
