@@ -6,13 +6,13 @@
 import { Response } from 'express';
 import { cartClient } from '@clients/cart.client';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import jwt from 'jsonwebtoken';
 
 // ============================================================================
 // Helper functions
 // ============================================================================
-const getToken = (req: RequestWithCorrelationId): string | null => {
+const getToken = (req: RequestWithTraceContext): string | null => {
   return req.headers.authorization?.replace('Bearer ', '') || null;
 };
 
@@ -27,7 +27,7 @@ const getUserIdFromToken = (token: string): string | null => {
 };
 
 const requireAuth = (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): { token: string; userId: string } | null => {
   const token = getToken(req);
@@ -59,13 +59,14 @@ const requireAuth = (
  * GET /api/cart
  * Get authenticated user's cart
  */
-export const getCart = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     logger.info('Fetching user cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       userId: auth.userId,
     });
 
@@ -81,8 +82,9 @@ export const getCart = async (req: RequestWithCorrelationId, res: Response): Pro
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error fetching user cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -99,13 +101,14 @@ export const getCart = async (req: RequestWithCorrelationId, res: Response): Pro
  * POST /api/cart/items
  * Add item to authenticated user's cart
  */
-export const addItem = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const addItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     logger.info('Adding item to cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       userId: auth.userId,
       productId: req.body.productId,
     });
@@ -122,8 +125,9 @@ export const addItem = async (req: RequestWithCorrelationId, res: Response): Pro
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error adding item to cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -140,8 +144,9 @@ export const addItem = async (req: RequestWithCorrelationId, res: Response): Pro
  * PUT /api/cart/items/:productId
  * Update item quantity in authenticated user's cart
  */
-export const updateItem = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const updateItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
@@ -149,7 +154,7 @@ export const updateItem = async (req: RequestWithCorrelationId, res: Response): 
     const { quantity } = req.body;
 
     logger.info('Updating cart item', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       userId: auth.userId,
       productId,
       quantity,
@@ -167,8 +172,9 @@ export const updateItem = async (req: RequestWithCorrelationId, res: Response): 
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error updating cart item', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -185,15 +191,16 @@ export const updateItem = async (req: RequestWithCorrelationId, res: Response): 
  * DELETE /api/cart/items/:productId
  * Remove item from authenticated user's cart
  */
-export const removeItem = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const removeItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     const { productId } = req.params;
 
     logger.info('Removing item from cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       userId: auth.userId,
       productId,
     });
@@ -210,8 +217,9 @@ export const removeItem = async (req: RequestWithCorrelationId, res: Response): 
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error removing item from cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -228,13 +236,14 @@ export const removeItem = async (req: RequestWithCorrelationId, res: Response): 
  * DELETE /api/cart
  * Clear authenticated user's cart
  */
-export const clearCart = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const clearCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     logger.info('Clearing cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       userId: auth.userId,
     });
 
@@ -250,8 +259,9 @@ export const clearCart = async (req: RequestWithCorrelationId, res: Response): P
       message: 'Cart cleared successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error clearing cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -268,8 +278,9 @@ export const clearCart = async (req: RequestWithCorrelationId, res: Response): P
  * POST /api/cart/transfer
  * Transfer guest cart to authenticated user
  */
-export const transferCart = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const transferCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
@@ -284,7 +295,7 @@ export const transferCart = async (req: RequestWithCorrelationId, res: Response)
     }
 
     logger.info('Transferring guest cart to user', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       userId: auth.userId,
       guestId,
     });
@@ -302,8 +313,9 @@ export const transferCart = async (req: RequestWithCorrelationId, res: Response)
       message: 'Cart transferred successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error transferring cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -324,12 +336,13 @@ export const transferCart = async (req: RequestWithCorrelationId, res: Response)
  * GET /api/cart/guest/:guestId
  * Get guest cart
  */
-export const getGuestCart = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getGuestCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const { guestId } = req.params;
 
     logger.info('Fetching guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       guestId,
     });
 
@@ -340,8 +353,9 @@ export const getGuestCart = async (req: RequestWithCorrelationId, res: Response)
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error fetching guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -358,12 +372,13 @@ export const getGuestCart = async (req: RequestWithCorrelationId, res: Response)
  * POST /api/cart/guest/:guestId/items
  * Add item to guest cart
  */
-export const addGuestItem = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const addGuestItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const { guestId } = req.params;
 
     logger.info('Adding item to guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       guestId,
       productId: req.body.productId,
     });
@@ -375,8 +390,9 @@ export const addGuestItem = async (req: RequestWithCorrelationId, res: Response)
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error adding item to guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -394,15 +410,16 @@ export const addGuestItem = async (req: RequestWithCorrelationId, res: Response)
  * Update item quantity in guest cart
  */
 export const updateGuestItem = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const { guestId, productId } = req.params;
     const { quantity } = req.body;
 
     logger.info('Updating guest cart item', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       guestId,
       productId,
       quantity,
@@ -415,8 +432,9 @@ export const updateGuestItem = async (
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error updating guest cart item', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -434,14 +452,15 @@ export const updateGuestItem = async (
  * Remove item from guest cart
  */
 export const removeGuestItem = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const { guestId, productId } = req.params;
 
     logger.info('Removing item from guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       guestId,
       productId,
     });
@@ -453,8 +472,9 @@ export const removeGuestItem = async (
       data: cart,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error removing item from guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -472,14 +492,15 @@ export const removeGuestItem = async (
  * Clear guest cart
  */
 export const clearGuestCart = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const { guestId } = req.params;
 
     logger.info('Clearing guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       guestId,
     });
 
@@ -490,8 +511,9 @@ export const clearGuestCart = async (
       message: 'Guest cart cleared successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error clearing guest cart', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 

@@ -6,7 +6,7 @@
 import { Request, Response } from 'express';
 import { storefrontAggregator } from '@aggregators/storefront.aggregator';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 
 /**
  * Service information endpoint
@@ -34,26 +34,30 @@ export const version = (_req: Request, res: Response): void => {
  * Get trending products with inventory and reviews
  */
 export const getTrendingProducts = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const limit = parseInt(req.query.limit as string) || 4;
 
     logger.info('Fetching trending products', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       limit,
     });
 
-    const products = await storefrontAggregator.getTrendingProducts(limit, req.correlationId);
+    const products = await storefrontAggregator.getTrendingProducts(limit, traceId, spanId);
 
     res.json({
       success: true,
       data: products,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/home/trending', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       error,
     });
 
@@ -70,14 +74,16 @@ export const getTrendingProducts = async (
  * Get trending categories with metadata
  */
 export const getTrendingCategories = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const limit = parseInt(req.query.limit as string) || 5;
 
     logger.info('Fetching trending categories', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       limit,
     });
 
@@ -88,8 +94,10 @@ export const getTrendingCategories = async (
       data: categories,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/home/trending-categories', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       error,
     });
 
@@ -105,13 +113,12 @@ export const getTrendingCategories = async (
 /**
  * Get product categories
  */
-export const getCategories = async (
-  req: RequestWithCorrelationId,
-  res: Response
-): Promise<void> => {
+export const getCategories = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     logger.info('Fetching categories', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
     });
 
     const categories = await storefrontAggregator.getCategories();
@@ -121,8 +128,10 @@ export const getCategories = async (
       data: categories,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/home/categories', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       error,
     });
 

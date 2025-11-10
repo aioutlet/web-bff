@@ -1,17 +1,18 @@
 import { Response, NextFunction } from 'express';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from './correlation-id.middleware';
+import { RequestWithTraceContext } from './traceContext.middleware';
 
 export const errorMiddleware = (
   err: Error,
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response,
   _next: NextFunction
 ) => {
-  const correlationId = req.correlationId || 'unknown';
+  const { traceId, spanId } = req;
 
   logger.error('Request error', {
-    correlationId,
+    traceId,
+    spanId,
     error: err.message,
     stack: err.stack,
     path: req.path,
@@ -31,7 +32,8 @@ export const errorMiddleware = (
     success: false,
     error: {
       message,
-      correlationId,
+      traceId,
+      spanId,
       ...(config.env !== 'production' && { stack: err.stack }),
     },
   });

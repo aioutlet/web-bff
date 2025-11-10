@@ -6,32 +6,34 @@
 import { Response } from 'express';
 import { authClient } from '@clients/auth.client';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 
 /**
  * POST /api/auth/login
  * User login
  */
-export const login = async (req: RequestWithCorrelationId, res: Response) => {
+export const login = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { email, password } = req.body;
 
     logger.info('Login attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       email,
     });
 
     const data = await authClient.login(
       { email, password },
       {
-        'X-Correlation-Id': req.correlationId!,
+        'traceparent': `00-${traceId}-${spanId}-01`,
       }
     );
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Login error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -54,26 +56,28 @@ export const login = async (req: RequestWithCorrelationId, res: Response) => {
  * POST /api/auth/register
  * User registration
  */
-export const register = async (req: RequestWithCorrelationId, res: Response) => {
+export const register = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { email, password, firstName, lastName, phoneNumber } = req.body;
 
     logger.info('Registration attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       email,
     });
 
     const data = await authClient.register(
       { email, password, firstName, lastName, phoneNumber },
       {
-        'X-Correlation-Id': req.correlationId!,
+        'traceparent': `00-${traceId}-${spanId}-01`,
       }
     );
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Registration error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -90,16 +94,17 @@ export const register = async (req: RequestWithCorrelationId, res: Response) => 
  * POST /api/auth/logout
  * User logout
  */
-export const logout = async (req: RequestWithCorrelationId, res: Response) => {
+export const logout = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { refreshToken } = req.body;
 
     logger.info('Logout attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     await authClient.logout(refreshToken, {
-      'X-Correlation-Id': req.correlationId!,
+      'traceparent': `00-${traceId}-${spanId}-01`,
     });
 
     res.json({
@@ -107,8 +112,9 @@ export const logout = async (req: RequestWithCorrelationId, res: Response) => {
       message: 'Logged out successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Logout error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -125,25 +131,27 @@ export const logout = async (req: RequestWithCorrelationId, res: Response) => {
  * POST /api/auth/refresh
  * Refresh access token
  */
-export const refreshToken = async (req: RequestWithCorrelationId, res: Response) => {
+export const refreshToken = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { refreshToken } = req.body;
 
     logger.info('Token refresh attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const data = await authClient.refreshToken(
       { refreshToken },
       {
-        'X-Correlation-Id': req.correlationId!,
+        'traceparent': `00-${traceId}-${spanId}-01`,
       }
     );
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Token refresh error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -161,10 +169,11 @@ export const refreshToken = async (req: RequestWithCorrelationId, res: Response)
  * Get current user profile
  */
 export const getCurrentUser = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
@@ -176,17 +185,18 @@ export const getCurrentUser = async (
     }
 
     logger.info('Get current user', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const data = await authClient.getCurrentUser(token, {
-      'X-Correlation-Id': req.correlationId!,
+      'traceparent': `00-${traceId}-${spanId}-01`,
     });
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Get current user error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -203,8 +213,9 @@ export const getCurrentUser = async (
  * GET /api/auth/verify
  * Verify JWT token (dedicated token verification endpoint)
  */
-export const verifyToken = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const verifyToken = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
@@ -216,17 +227,18 @@ export const verifyToken = async (req: RequestWithCorrelationId, res: Response):
     }
 
     logger.info('Token verification attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const data = await authClient.verifyToken(token, {
-      'X-Correlation-Id': req.correlationId!,
+      'traceparent': `00-${traceId}-${spanId}-01`,
     });
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Token verification error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -243,8 +255,9 @@ export const verifyToken = async (req: RequestWithCorrelationId, res: Response):
  * GET /api/auth/email/verify
  * Verify email with token
  */
-export const verifyEmail = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const verifyEmail = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const { token } = req.query;
 
     if (!token || typeof token !== 'string') {
@@ -256,17 +269,18 @@ export const verifyEmail = async (req: RequestWithCorrelationId, res: Response):
     }
 
     logger.info('Email verification attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const data = await authClient.verifyEmail(token, {
-      'X-Correlation-Id': req.correlationId!,
+      'traceparent': `00-${traceId}-${spanId}-01`,
     });
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Email verification error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -283,23 +297,25 @@ export const verifyEmail = async (req: RequestWithCorrelationId, res: Response):
  * POST /api/auth/email/resend
  * Resend verification email
  */
-export const resendVerificationEmail = async (req: RequestWithCorrelationId, res: Response) => {
+export const resendVerificationEmail = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { email } = req.body;
 
     logger.info('Resend verification email', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       email,
     });
 
     const data = await authClient.resendVerificationEmail(email, {
-      'X-Correlation-Id': req.correlationId!,
+      'traceparent': `00-${traceId}-${spanId}-01`,
     });
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Resend verification email error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -316,26 +332,28 @@ export const resendVerificationEmail = async (req: RequestWithCorrelationId, res
  * POST /api/auth/password/forgot
  * Request password reset
  */
-export const forgotPassword = async (req: RequestWithCorrelationId, res: Response) => {
+export const forgotPassword = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { email } = req.body;
 
     logger.info('Password reset request', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       email,
     });
 
     const data = await authClient.forgotPassword(
       { email },
       {
-        'X-Correlation-Id': req.correlationId!,
+        'traceparent': `00-${traceId}-${spanId}-01`,
       }
     );
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Password reset request error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -352,25 +370,27 @@ export const forgotPassword = async (req: RequestWithCorrelationId, res: Respons
  * POST /api/auth/password/reset
  * Reset password with token
  */
-export const resetPassword = async (req: RequestWithCorrelationId, res: Response) => {
+export const resetPassword = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { token, password } = req.body;
 
     logger.info('Password reset', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const data = await authClient.resetPassword(
       { token, password },
       {
-        'X-Correlation-Id': req.correlationId!,
+        'traceparent': `00-${traceId}-${spanId}-01`,
       }
     );
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Password reset error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -388,10 +408,11 @@ export const resetPassword = async (req: RequestWithCorrelationId, res: Response
  * Change password for authenticated user
  */
 export const changePassword = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = req.headers.authorization?.replace('Bearer ', '');
 
     if (!token) {
@@ -405,17 +426,18 @@ export const changePassword = async (
     const { currentPassword, newPassword } = req.body;
 
     logger.info('Password change attempt', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const data = await authClient.changePassword({ currentPassword, newPassword }, token, {
-      'X-Correlation-Id': req.correlationId!,
+      'traceparent': `00-${traceId}-${spanId}-01`,
     });
 
     res.json(data);
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Password change error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 

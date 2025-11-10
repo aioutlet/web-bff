@@ -6,13 +6,13 @@
 import { Response } from 'express';
 import { orderClient } from '@clients/order.client';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import jwt from 'jsonwebtoken';
 
 // ============================================================================
 // Helper functions
 // ============================================================================
-const getToken = (req: RequestWithCorrelationId): string | null => {
+const getToken = (req: RequestWithTraceContext): string | null => {
   return req.headers.authorization?.replace('Bearer ', '') || null;
 };
 
@@ -27,7 +27,7 @@ const getUserIdFromToken = (token: string): string | null => {
 };
 
 const requireAuth = (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): { token: string; userId: string } | null => {
   const token = getToken(req);
@@ -59,13 +59,14 @@ const requireAuth = (
  * POST /api/orders
  * Create a new order (customer only)
  */
-export const createOrder = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const createOrder = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     logger.info('Creating order', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       customerId: auth.userId,
     });
 
@@ -84,7 +85,7 @@ export const createOrder = async (req: RequestWithCorrelationId, res: Response):
     const order = await orderClient.createOrder(orderData, headers);
 
     logger.info('Order created successfully', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       orderId: order.id,
     });
 
@@ -93,8 +94,9 @@ export const createOrder = async (req: RequestWithCorrelationId, res: Response):
       data: order,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error creating order', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
       statusCode: error.response?.status,
     });
@@ -112,13 +114,14 @@ export const createOrder = async (req: RequestWithCorrelationId, res: Response):
  * GET /api/orders/my
  * Get current user's orders
  */
-export const getMyOrders = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getMyOrders = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     logger.info('Fetching user orders', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       customerId: auth.userId,
     });
 
@@ -134,8 +137,9 @@ export const getMyOrders = async (req: RequestWithCorrelationId, res: Response):
       data: orders,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error fetching user orders', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -153,15 +157,16 @@ export const getMyOrders = async (req: RequestWithCorrelationId, res: Response):
  * Get current user's orders with pagination
  */
 export const getMyOrdersPaged = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     logger.info('Fetching user orders (paged)', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       customerId: auth.userId,
       page: req.query.page,
       pageSize: req.query.pageSize,
@@ -184,8 +189,9 @@ export const getMyOrdersPaged = async (
       data: pagedOrders,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error fetching user orders (paged)', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -202,15 +208,16 @@ export const getMyOrdersPaged = async (
  * GET /api/orders/:id
  * Get order by ID (customer can view own orders)
  */
-export const getOrderById = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getOrderById = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const auth = requireAuth(req, res);
     if (!auth) return;
 
     const { id } = req.params;
 
     logger.info('Fetching order', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       orderId: id,
     });
 
@@ -226,8 +233,9 @@ export const getOrderById = async (req: RequestWithCorrelationId, res: Response)
       data: order,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Error fetching order', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       orderId: req.params.id,
       error: error.message,
     });

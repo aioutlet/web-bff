@@ -6,7 +6,7 @@
 import { Response } from 'express';
 import { productClient } from '@clients/product.client';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import { getProductReviews } from '@aggregators/product.aggregator';
 
 /**
@@ -14,8 +14,9 @@ import { getProductReviews } from '@aggregators/product.aggregator';
  * List products with hierarchical filtering
  * Supports: department, category, subcategory, price, tags, pagination
  */
-export const getProducts = async (req: RequestWithCorrelationId, res: Response) => {
+export const getProducts = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const {
       department,
       category,
@@ -28,7 +29,8 @@ export const getProducts = async (req: RequestWithCorrelationId, res: Response) 
     } = req.query;
 
     logger.info('Fetching products', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       department,
       category,
       subcategory,
@@ -62,8 +64,10 @@ export const getProducts = async (req: RequestWithCorrelationId, res: Response) 
       data: response,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/products', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
@@ -83,8 +87,9 @@ export const getProducts = async (req: RequestWithCorrelationId, res: Response) 
  * GET /api/products/search
  * Search products with hierarchical filtering
  */
-export const searchProducts = async (req: RequestWithCorrelationId, res: Response) => {
+export const searchProducts = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const {
       q,
       department,
@@ -107,7 +112,8 @@ export const searchProducts = async (req: RequestWithCorrelationId, res: Respons
     }
 
     logger.info('Searching products', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       query: q,
       department,
       category,
@@ -139,8 +145,10 @@ export const searchProducts = async (req: RequestWithCorrelationId, res: Respons
       data: response,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/products/search', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
 
@@ -160,11 +168,13 @@ export const searchProducts = async (req: RequestWithCorrelationId, res: Respons
  * GET /api/products/:id
  * Get a single product by ID with top reviews
  */
-export const getProductById = async (req: RequestWithCorrelationId, res: Response) => {
+export const getProductById = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { id } = req.params;
     logger.info('Fetching product by ID', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       productId: id,
     });
 
@@ -178,8 +188,10 @@ export const getProductById = async (req: RequestWithCorrelationId, res: Respons
       data: product,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/products/:id', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       productId: req.params.id,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
@@ -200,13 +212,15 @@ export const getProductById = async (req: RequestWithCorrelationId, res: Respons
  * GET /api/products/:id/reviews
  * Get all reviews for a product with pagination
  */
-export const getProductReviewsById = async (req: RequestWithCorrelationId, res: Response) => {
+export const getProductReviewsById = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
     const { id } = req.params;
     const { skip = '0', limit = '20', sort = 'recent' } = req.query;
 
     logger.info('Fetching product reviews', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       productId: id,
       skip,
       limit,
@@ -216,7 +230,8 @@ export const getProductReviewsById = async (req: RequestWithCorrelationId, res: 
     // Fetch reviews for product
     const reviewData = await getProductReviews(
       id,
-      req.correlationId || 'no-correlation',
+      traceId,
+      spanId,
       parseInt(skip as string, 10),
       parseInt(limit as string, 10),
       sort as string
@@ -227,8 +242,10 @@ export const getProductReviewsById = async (req: RequestWithCorrelationId, res: 
       data: reviewData,
     });
   } catch (error) {
+    const { traceId, spanId } = req;
     logger.error('Error in /api/products/:id/reviews', {
-      correlationId: req.correlationId,
+      traceId,
+      spanId,
       productId: req.params.id,
       error: error instanceof Error ? error.message : 'Unknown error',
     });

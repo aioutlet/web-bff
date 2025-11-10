@@ -69,14 +69,15 @@ export class AdminDashboardAggregator {
    * @param recentLimit - number of recent items to fetch
    */
   async getDashboardStats(
-    correlationId: string,
+    traceId: string,
+    spanId: string,
     authHeaders: Record<string, string>,
     options?: { includeRecent?: boolean; recentLimit?: number }
   ): Promise<DashboardStats & { recentOrders?: RecentOrder[]; recentUsers?: RecentUser[] }> {
-    logger.info('Aggregating dashboard stats from microservices', { correlationId, options });
+    logger.info('Aggregating dashboard stats from microservices', { traceId, spanId, options });
 
     const headers = {
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
       ...authHeaders,
     };
 
@@ -99,35 +100,40 @@ export class AdminDashboardAggregator {
       logger.error('User stats fetch failed', {
         error: userStats.reason?.message || userStats.reason,
         stack: userStats.reason?.stack,
-        correlationId,
+        traceId,
+        spanId,
       });
     }
     if (orderStats.status === 'rejected') {
       logger.error('Order stats fetch failed', {
         error: orderStats.reason?.message || orderStats.reason,
         stack: orderStats.reason?.stack,
-        correlationId,
+        traceId,
+        spanId,
       });
     }
     if (productStats.status === 'rejected') {
       logger.error('Product stats fetch failed', {
         error: productStats.reason?.message || productStats.reason,
         stack: productStats.reason?.stack,
-        correlationId,
+        traceId,
+        spanId,
       });
     }
     if (inventoryStats.status === 'rejected') {
       logger.error('Inventory stats fetch failed', {
         error: inventoryStats.reason?.message || inventoryStats.reason,
         stack: inventoryStats.reason?.stack,
-        correlationId,
+        traceId,
+        spanId,
       });
     }
     if (reviewStats.status === 'rejected') {
       logger.error('Review stats fetch failed', {
         error: reviewStats.reason?.message || reviewStats.reason,
         stack: reviewStats.reason?.stack,
-        correlationId,
+        traceId,
+        spanId,
       });
     }
 
@@ -226,7 +232,8 @@ export class AdminDashboardAggregator {
       }
 
       logger.info('Dashboard stats aggregated successfully', {
-        correlationId,
+        traceId,
+        spanId,
         servicesResponded: {
           users: userStats.status === 'fulfilled',
           orders: orderStats.status === 'fulfilled',
@@ -244,7 +251,8 @@ export class AdminDashboardAggregator {
       return aggregatedStats;
     } catch (error: any) {
       logger.error('Error processing dashboard stats', {
-        correlationId,
+        traceId,
+        spanId,
         error: error.message,
         stack: error.stack,
       });

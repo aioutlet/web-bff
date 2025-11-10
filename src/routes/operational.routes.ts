@@ -10,8 +10,9 @@ import * as operationalController from '@controllers/operational.controller';
 const router = Router();
 
 // Operational/Health Check Routes
-router.get('/', operationalController.health);
+router.get('/health', operationalController.health);
 router.get('/ready', operationalController.readiness);
 router.get('/live', operationalController.liveness);
+router.get('/metrics', operationalController.metrics);
 
 export default router;

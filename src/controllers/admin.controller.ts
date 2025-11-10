@@ -3,7 +3,8 @@
  * Handles all admin-related operations including dashboard, user, product, review, and order management
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import logger from '../core/logger';
 import { adminDashboardAggregator } from '../aggregators/admin.dashboard.aggregator';
 
@@ -16,37 +17,39 @@ import { adminDashboardAggregator } from '../aggregators/admin.dashboard.aggrega
  * Aggregates stats from multiple microservices via dedicated aggregator
  * Optionally includes recent orders and users
  */
-export const getDashboardStats = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
-  const includeRecent = req.query.includeRecent === 'true';
-  const recentLimit = parseInt(req.query.recentLimit as string) || 10;
-
-  logger.info('[BFF] Dashboard stats endpoint called', {
-    correlationId,
-    includeRecent,
-    recentLimit,
-    timestamp: new Date().toISOString(),
-  });
-
+export const getDashboardStats = async (req: RequestWithTraceContext, res: Response) => {
   try {
+    const { traceId, spanId } = req;
+    const includeRecent = req.query.includeRecent === 'true';
+    const recentLimit = parseInt(req.query.recentLimit as string) || 10;
+
+    logger.info('[BFF] Dashboard stats endpoint called', {
+      traceId,
+      spanId,
+      includeRecent,
+      recentLimit,
+      timestamp: new Date().toISOString(),
+    });
+
     const authHeaders = {
       authorization: req.get('authorization') || '',
     };
 
     // Get stats with optional recent data in a SINGLE aggregated call (no duplicate requests)
-    const stats = await adminDashboardAggregator.getDashboardStats(correlationId, authHeaders, {
+    const stats = await adminDashboardAggregator.getDashboardStats(traceId, spanId, authHeaders, {
       includeRecent,
       recentLimit,
     });
 
-    logger.info('[BFF] Dashboard stats completed successfully', { correlationId });
+    logger.info('[BFF] Dashboard stats completed successfully', { traceId, spanId });
 
     res.json({
       success: true,
       data: stats,
     });
   } catch (error) {
-    logger.error('Failed to fetch dashboard stats', { error, correlationId });
+    const { traceId, spanId } = req;
+    logger.error('Failed to fetch dashboard stats', { error, traceId, spanId });
     res.status(500).json({
       success: false,
       error: 'Failed to fetch dashboard statistics',
@@ -62,13 +65,13 @@ export const getDashboardStats = async (req: Request, res: Response) => {
  * GET /api/admin/users
  * Get all users with optional filtering and pagination
  */
-export const getAllUsers = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getAllUsers = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { adminClient } = await import('../clients/admin.client');
@@ -79,7 +82,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
       data: users,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch users', { error, correlationId });
+    logger.error('Failed to fetch users', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch users',
@@ -91,14 +94,14 @@ export const getAllUsers = async (req: Request, res: Response) => {
  * GET /api/admin/users/:id
  * Get user by ID
  */
-export const getUserById = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getUserById = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { adminClient } = await import('../clients/admin.client');
@@ -109,7 +112,7 @@ export const getUserById = async (req: Request, res: Response) => {
       data: user,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch user', { error, correlationId, userId: id });
+    logger.error('Failed to fetch user', { error, traceId, spanId, userId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch user',
@@ -121,13 +124,13 @@ export const getUserById = async (req: Request, res: Response) => {
  * POST /api/admin/users
  * Create a new user
  */
-export const createUser = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const createUser = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { adminClient } = await import('../clients/admin.client');
@@ -138,7 +141,7 @@ export const createUser = async (req: Request, res: Response) => {
       data: user,
     });
   } catch (error: any) {
-    logger.error('Failed to create user', { error, correlationId });
+    logger.error('Failed to create user', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to create user',
@@ -150,14 +153,14 @@ export const createUser = async (req: Request, res: Response) => {
  * PATCH /api/admin/users/:id
  * Update user
  */
-export const updateUser = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const updateUser = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { adminClient } = await import('../clients/admin.client');
@@ -168,7 +171,7 @@ export const updateUser = async (req: Request, res: Response) => {
       data: user,
     });
   } catch (error: any) {
-    logger.error('Failed to update user', { error, correlationId, userId: id });
+    logger.error('Failed to update user', { error, traceId, spanId, userId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to update user',
@@ -180,14 +183,14 @@ export const updateUser = async (req: Request, res: Response) => {
  * DELETE /api/admin/users/:id
  * Delete user
  */
-export const deleteUser = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const deleteUser = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { adminClient } = await import('../clients/admin.client');
@@ -195,7 +198,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 
     res.status(204).send();
   } catch (error: any) {
-    logger.error('Failed to delete user', { error, correlationId, userId: id });
+    logger.error('Failed to delete user', { error, traceId, spanId, userId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to delete user',
@@ -211,13 +214,13 @@ export const deleteUser = async (req: Request, res: Response) => {
  * GET /api/admin/products
  * Get all products with optional filtering and pagination
  */
-export const getAllProducts = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getAllProducts = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { productClient } = await import('../clients/product.client');
@@ -234,7 +237,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.error('Failed to fetch products', { error, correlationId });
+    logger.error('Failed to fetch products', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch products',
@@ -246,14 +249,14 @@ export const getAllProducts = async (req: Request, res: Response) => {
  * GET /api/admin/products/:id
  * Get product by ID
  */
-export const getProductById = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getProductById = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { productClient } = await import('../clients/product.client');
@@ -264,7 +267,7 @@ export const getProductById = async (req: Request, res: Response) => {
       data: product,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch product', { error, correlationId, productId: id });
+    logger.error('Failed to fetch product', { error, traceId, spanId, productId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch product',
@@ -276,13 +279,13 @@ export const getProductById = async (req: Request, res: Response) => {
  * POST /api/admin/products
  * Create new product
  */
-export const createProduct = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const createProduct = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { productClient } = await import('../clients/product.client');
@@ -293,7 +296,7 @@ export const createProduct = async (req: Request, res: Response) => {
       data: product,
     });
   } catch (error: any) {
-    logger.error('Failed to create product', { error, correlationId });
+    logger.error('Failed to create product', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to create product',
@@ -305,14 +308,14 @@ export const createProduct = async (req: Request, res: Response) => {
  * PATCH /api/admin/products/:id
  * Update product
  */
-export const updateProduct = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const updateProduct = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { productClient } = await import('../clients/product.client');
@@ -323,7 +326,7 @@ export const updateProduct = async (req: Request, res: Response) => {
       data: product,
     });
   } catch (error: any) {
-    logger.error('Failed to update product', { error, correlationId, productId: id });
+    logger.error('Failed to update product', { error, traceId, spanId, productId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to update product',
@@ -335,14 +338,14 @@ export const updateProduct = async (req: Request, res: Response) => {
  * DELETE /api/admin/products/:id
  * Delete product
  */
-export const deleteProduct = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const deleteProduct = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { productClient } = await import('../clients/product.client');
@@ -350,7 +353,7 @@ export const deleteProduct = async (req: Request, res: Response) => {
 
     res.status(204).send();
   } catch (error: any) {
-    logger.error('Failed to delete product', { error, correlationId, productId: id });
+    logger.error('Failed to delete product', { error, traceId, spanId, productId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to delete product',
@@ -366,13 +369,13 @@ export const deleteProduct = async (req: Request, res: Response) => {
  * GET /api/admin/reviews
  * Get all reviews with optional filtering
  */
-export const getAllReviews = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getAllReviews = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { reviewClient } = await import('../clients/review.client');
@@ -389,7 +392,7 @@ export const getAllReviews = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.error('Failed to fetch reviews', { error, correlationId });
+    logger.error('Failed to fetch reviews', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch reviews',
@@ -401,13 +404,13 @@ export const getAllReviews = async (req: Request, res: Response) => {
  * GET /api/admin/reviews/stats
  * Get review statistics for admin dashboard
  */
-export const getReviewStats = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getReviewStats = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { reviewClient } = await import('../clients/review.client');
@@ -418,7 +421,7 @@ export const getReviewStats = async (req: Request, res: Response) => {
       data: stats.data || stats,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch review stats', { error, correlationId });
+    logger.error('Failed to fetch review stats', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch review stats',
@@ -430,14 +433,14 @@ export const getReviewStats = async (req: Request, res: Response) => {
  * GET /api/admin/reviews/:id
  * Get review by ID
  */
-export const getReviewById = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getReviewById = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { reviewClient } = await import('../clients/review.client');
@@ -448,7 +451,7 @@ export const getReviewById = async (req: Request, res: Response) => {
       data: review.data || review,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch review', { error, correlationId, reviewId: id });
+    logger.error('Failed to fetch review', { error, traceId, spanId, reviewId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch review',
@@ -460,14 +463,14 @@ export const getReviewById = async (req: Request, res: Response) => {
  * PATCH /api/admin/reviews/:id
  * Update review (approve/reject/moderate)
  */
-export const updateReview = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const updateReview = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { reviewClient } = await import('../clients/review.client');
@@ -478,7 +481,7 @@ export const updateReview = async (req: Request, res: Response) => {
       data: review.data || review,
     });
   } catch (error: any) {
-    logger.error('Failed to update review', { error, correlationId, reviewId: id });
+    logger.error('Failed to update review', { error, traceId, spanId, reviewId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to update review',
@@ -490,14 +493,14 @@ export const updateReview = async (req: Request, res: Response) => {
  * DELETE /api/admin/reviews/:id
  * Delete review
  */
-export const deleteReview = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const deleteReview = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { reviewClient } = await import('../clients/review.client');
@@ -505,7 +508,7 @@ export const deleteReview = async (req: Request, res: Response) => {
 
     res.status(204).send();
   } catch (error: any) {
-    logger.error('Failed to delete review', { error, correlationId, reviewId: id });
+    logger.error('Failed to delete review', { error, traceId, spanId, reviewId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to delete review',
@@ -517,13 +520,13 @@ export const deleteReview = async (req: Request, res: Response) => {
  * POST /api/admin/reviews/bulk-delete
  * Bulk delete reviews
  */
-export const bulkDeleteReviews = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const bulkDeleteReviews = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { reviewClient } = await import('../clients/review.client');
@@ -534,7 +537,7 @@ export const bulkDeleteReviews = async (req: Request, res: Response) => {
       data: result.data || result,
     });
   } catch (error: any) {
-    logger.error('Failed to bulk delete reviews', { error, correlationId });
+    logger.error('Failed to bulk delete reviews', { error, traceId, spanId });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to bulk delete reviews',
@@ -550,13 +553,13 @@ export const bulkDeleteReviews = async (req: Request, res: Response) => {
  * GET /api/admin/orders
  * Get all orders
  */
-export const getAllOrders = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getAllOrders = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { orderClient } = await import('../clients/order.client');
@@ -572,7 +575,8 @@ export const getAllOrders = async (req: Request, res: Response) => {
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
-      correlationId,
+      traceId,
+      spanId,
     });
     res.status(error.response?.status || 500).json({
       success: false,
@@ -585,13 +589,13 @@ export const getAllOrders = async (req: Request, res: Response) => {
  * GET /api/admin/orders/paged
  * Get orders with pagination
  */
-export const getOrdersPaged = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getOrdersPaged = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { orderClient } = await import('../clients/order.client');
@@ -612,7 +616,8 @@ export const getOrdersPaged = async (req: Request, res: Response) => {
       errorMessage: error.message,
       status: error.response?.status,
       responseData: error.response?.data,
-      correlationId,
+      traceId,
+      spanId,
     });
     res.status(error.response?.status || 500).json({
       success: false,
@@ -629,14 +634,14 @@ export const getOrdersPaged = async (req: Request, res: Response) => {
  * GET /api/admin/orders/:id
  * Get order by ID
  */
-export const getOrderById = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const getOrderById = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { orderClient } = await import('../clients/order.client');
@@ -647,7 +652,7 @@ export const getOrderById = async (req: Request, res: Response) => {
       data: order,
     });
   } catch (error: any) {
-    logger.error('Failed to fetch order', { error, correlationId, orderId: id });
+    logger.error('Failed to fetch order', { error, traceId, spanId, orderId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to fetch order',
@@ -659,14 +664,14 @@ export const getOrderById = async (req: Request, res: Response) => {
  * PUT /api/admin/orders/:id/status
  * Update order status
  */
-export const updateOrderStatus = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const updateOrderStatus = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { orderClient } = await import('../clients/order.client');
@@ -677,7 +682,7 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       data: order,
     });
   } catch (error: any) {
-    logger.error('Failed to update order status', { error, correlationId, orderId: id });
+    logger.error('Failed to update order status', { error, traceId, spanId, orderId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to update order status',
@@ -689,14 +694,14 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
  * DELETE /api/admin/orders/:id
  * Delete order
  */
-export const deleteOrder = async (req: Request, res: Response) => {
-  const correlationId = req.get('x-correlation-id') || 'no-correlation';
+export const deleteOrder = async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
   const { id } = req.params;
 
   try {
     const authHeaders = {
       authorization: req.get('authorization') || '',
-      'x-correlation-id': correlationId,
+      traceparent: `00-${traceId}-${spanId}-01`,
     };
 
     const { orderClient } = await import('../clients/order.client');
@@ -704,7 +709,7 @@ export const deleteOrder = async (req: Request, res: Response) => {
 
     res.status(204).send();
   } catch (error: any) {
-    logger.error('Failed to delete order', { error, correlationId, orderId: id });
+    logger.error('Failed to delete order', { error, traceId, spanId, orderId: id });
     res.status(error.response?.status || 500).json({
       success: false,
       error: error.response?.data?.message || 'Failed to delete order',

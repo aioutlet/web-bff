@@ -2,10 +2,9 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import config from '@/core/config';
 import routes from '@routes/index';
-import { correlationIdMiddleware } from '@middleware/correlation-id.middleware';
+import { traceContextMiddleware } from '@middleware/traceContext.middleware';
 import { errorMiddleware } from '@middleware/error.middleware';
 import operationalRoutes from '@routes/operational.routes';
-import { metrics } from '@controllers/operational.controller';
 
 const app: Application = express();
 
@@ -17,7 +16,7 @@ app.use(
   cors({
     origin: config.allowedOrigins,
     credentials: true,
-    exposedHeaders: ['x-correlation-id', 'X-Correlation-ID'],
+    exposedHeaders: ['traceparent'],
   })
 );
 
@@ -26,11 +25,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Custom middleware
-app.use(correlationIdMiddleware);
+app.use(traceContextMiddleware as any); // W3C Trace Context
 
 // Operational routes (no /api prefix)
-app.use('/health', operationalRoutes);
-app.get('/metrics', metrics);
+app.use('/', operationalRoutes);
 
 // API routes
 app.use('/api', routes);
@@ -46,6 +44,6 @@ app.use('*', (_req, res) => {
 });
 
 // Error handling middleware (must be last)
-app.use(errorMiddleware);
+app.use(errorMiddleware as any);
 
 export default app;

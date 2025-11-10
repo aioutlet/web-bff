@@ -3,41 +3,41 @@
  * Route definitions only - all logic is in admin.controller.ts
  */
 
-import { Router } from 'express';
+import { Router, RequestHandler } from 'express';
 import * as adminController from '@controllers/admin.controller';
 
 const router = Router();
 
 // Dashboard Routes
-router.get('/dashboard/stats', adminController.getDashboardStats);
+router.get('/dashboard/stats', adminController.getDashboardStats as unknown as RequestHandler);
 
 // User Management Routes
-router.get('/users', adminController.getAllUsers);
-router.get('/users/:id', adminController.getUserById);
-router.post('/users', adminController.createUser);
-router.patch('/users/:id', adminController.updateUser);
-router.delete('/users/:id', adminController.deleteUser);
+router.get('/users', adminController.getAllUsers as unknown as RequestHandler);
+router.get('/users/:id', adminController.getUserById as unknown as RequestHandler);
+router.post('/users', adminController.createUser as unknown as RequestHandler);
+router.patch('/users/:id', adminController.updateUser as unknown as RequestHandler);
+router.delete('/users/:id', adminController.deleteUser as unknown as RequestHandler);
 
 // Product Management Routes
-router.get('/products', adminController.getAllProducts);
-router.get('/products/:id', adminController.getProductById);
-router.post('/products', adminController.createProduct);
-router.patch('/products/:id', adminController.updateProduct);
-router.delete('/products/:id', adminController.deleteProduct);
+router.get('/products', adminController.getAllProducts as unknown as RequestHandler);
+router.get('/products/:id', adminController.getProductById as unknown as RequestHandler);
+router.post('/products', adminController.createProduct as unknown as RequestHandler);
+router.patch('/products/:id', adminController.updateProduct as unknown as RequestHandler);
+router.delete('/products/:id', adminController.deleteProduct as unknown as RequestHandler);
 
 // Review Management Routes
-router.get('/reviews', adminController.getAllReviews);
-router.get('/reviews/stats', adminController.getReviewStats);
-router.get('/reviews/:id', adminController.getReviewById);
-router.patch('/reviews/:id', adminController.updateReview);
-router.delete('/reviews/:id', adminController.deleteReview);
-router.post('/reviews/bulk-delete', adminController.bulkDeleteReviews);
+router.get('/reviews', adminController.getAllReviews as unknown as RequestHandler);
+router.get('/reviews/stats', adminController.getReviewStats as unknown as RequestHandler);
+router.get('/reviews/:id', adminController.getReviewById as unknown as RequestHandler);
+router.patch('/reviews/:id', adminController.updateReview as unknown as RequestHandler);
+router.delete('/reviews/:id', adminController.deleteReview as unknown as RequestHandler);
+router.post('/reviews/bulk-delete', adminController.bulkDeleteReviews as unknown as RequestHandler);
 
 // Order Management Routes
-router.get('/orders', adminController.getAllOrders);
-router.get('/orders/paged', adminController.getOrdersPaged);
-router.get('/orders/:id', adminController.getOrderById);
-router.put('/orders/:id/status', adminController.updateOrderStatus);
-router.delete('/orders/:id', adminController.deleteOrder);
+router.get('/orders', adminController.getAllOrders as unknown as RequestHandler);
+router.get('/orders/paged', adminController.getOrdersPaged as unknown as RequestHandler);
+router.get('/orders/:id', adminController.getOrderById as unknown as RequestHandler);
+router.put('/orders/:id/status', adminController.updateOrderStatus as unknown as RequestHandler);
+router.delete('/orders/:id', adminController.deleteOrder as unknown as RequestHandler);
 
 export default router;

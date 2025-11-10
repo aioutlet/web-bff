@@ -71,7 +71,8 @@ interface ReviewData {
  * Fetch all reviews for a product (for dedicated reviews page)
  *
  * @param productId - The ID of the product
- * @param correlationId - Correlation ID for request tracing
+ * @param traceId - W3C Trace Context trace ID
+ * @param spanId - W3C Trace Context span ID
  * @param skip - Number of reviews to skip (pagination)
  * @param limit - Maximum number of reviews to fetch
  * @param sort - Sort order (helpful, recent, rating)
@@ -79,14 +80,16 @@ interface ReviewData {
  */
 export async function getProductReviews(
   productId: string,
-  correlationId: string,
+  traceId: string,
+  spanId: string,
   skip: number = 0,
   limit: number = 20,
   sort: string = 'recent'
 ): Promise<{ reviews: ReviewData[]; total: number; hasMore: boolean }> {
   try {
     logger.info('Fetching product reviews', {
-      correlationId,
+      traceId,
+      spanId,
       productId,
       skip,
       limit,
@@ -101,7 +104,9 @@ export async function getProductReviews(
         limit,
         sort,
       },
-      { 'X-Correlation-Id': correlationId }
+      {
+        traceparent: `00-${traceId}-${spanId}-01`,
+      }
     );
 
     const reviews = response.data?.reviews || [];
@@ -109,7 +114,8 @@ export async function getProductReviews(
     const hasMore = skip + reviews.length < total;
 
     logger.info('Successfully fetched product reviews', {
-      correlationId,
+      traceId,
+      spanId,
       productId,
       reviewCount: reviews.length,
       total,
@@ -123,7 +129,8 @@ export async function getProductReviews(
     };
   } catch (error) {
     logger.error('Error fetching product reviews', {
-      correlationId,
+      traceId,
+      spanId,
       productId,
       error: error instanceof Error ? error.message : 'Unknown error',
     });

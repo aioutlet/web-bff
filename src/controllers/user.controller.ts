@@ -6,16 +6,16 @@
 import { Response } from 'express';
 import { userClient } from '@clients/user.client';
 import logger from '../core/logger';
-import { RequestWithCorrelationId } from '@middleware/correlation-id.middleware';
+import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 
 // ============================================================================
 // Helper function to extract token
 // ============================================================================
-const getToken = (req: RequestWithCorrelationId): string | null => {
+const getToken = (req: RequestWithTraceContext): string | null => {
   return req.headers.authorization?.replace('Bearer ', '') || null;
 };
 
-const requireAuth = (req: RequestWithCorrelationId, res: Response): string | null => {
+const requireAuth = (req: RequestWithTraceContext, res: Response): string | null => {
   const token = getToken(req);
   if (!token) {
     res.status(401).json({
@@ -35,13 +35,14 @@ const requireAuth = (req: RequestWithCorrelationId, res: Response): string | nul
  * GET /api/user/profile
  * Get current user profile
  */
-export const getProfile = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getProfile = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     logger.info('Get user profile', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const profile = await userClient.getProfile(token);
@@ -51,8 +52,9 @@ export const getProfile = async (req: RequestWithCorrelationId, res: Response): 
       data: profile,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Get user profile error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -70,17 +72,18 @@ export const getProfile = async (req: RequestWithCorrelationId, res: Response): 
  * Update user profile
  */
 export const updateProfile = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { firstName, lastName, phone, dateOfBirth } = req.body;
 
     logger.info('Update user profile', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const profile = await userClient.updateProfile(
@@ -93,8 +96,9 @@ export const updateProfile = async (
       data: profile,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Update user profile error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -112,15 +116,16 @@ export const updateProfile = async (
  * Delete user account
  */
 export const deleteAccount = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     logger.info('Delete user account', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     await userClient.deleteAccount(token);
@@ -130,8 +135,9 @@ export const deleteAccount = async (
       message: 'Account deleted successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Delete user account error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -152,13 +158,14 @@ export const deleteAccount = async (
  * GET /api/user/addresses
  * Get all user addresses
  */
-export const getAddresses = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getAddresses = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     logger.info('Get user addresses', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const addresses = await userClient.getAddresses(token);
@@ -168,8 +175,9 @@ export const getAddresses = async (req: RequestWithCorrelationId, res: Response)
       data: addresses,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Get user addresses error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -187,17 +195,18 @@ export const getAddresses = async (req: RequestWithCorrelationId, res: Response)
  * Create new address
  */
 export const createAddress = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { type, street, city, state, postalCode, country, isDefault } = req.body;
 
     logger.info('Create address', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const address = await userClient.createAddress(
@@ -210,8 +219,9 @@ export const createAddress = async (
       data: address,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Create address error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -229,10 +239,11 @@ export const createAddress = async (
  * Update address
  */
 export const updateAddress = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
@@ -240,7 +251,7 @@ export const updateAddress = async (
     const { type, street, city, state, postalCode, country, isDefault } = req.body;
 
     logger.info('Update address', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       addressId: id,
     });
 
@@ -255,8 +266,9 @@ export const updateAddress = async (
       data: address,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Update address error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -274,17 +286,18 @@ export const updateAddress = async (
  * Delete address
  */
 export const deleteAddress = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { id } = req.params;
 
     logger.info('Delete address', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       addressId: id,
     });
 
@@ -295,8 +308,9 @@ export const deleteAddress = async (
       message: 'Address deleted successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Delete address error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -314,17 +328,18 @@ export const deleteAddress = async (
  * Set address as default
  */
 export const setDefaultAddress = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { id } = req.params;
 
     logger.info('Set default address', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       addressId: id,
     });
 
@@ -335,8 +350,9 @@ export const setDefaultAddress = async (
       data: address,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Set default address error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -358,15 +374,16 @@ export const setDefaultAddress = async (
  * Get all payment methods
  */
 export const getPaymentMethods = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     logger.info('Get payment methods', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const paymentMethods = await userClient.getPaymentMethods(token);
@@ -376,8 +393,9 @@ export const getPaymentMethods = async (
       data: paymentMethods,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Get payment methods error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -395,17 +413,18 @@ export const getPaymentMethods = async (
  * Create new payment method
  */
 export const createPaymentMethod = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { type, cardNumber, cardholderName, expiryMonth, expiryYear, cvv, isDefault } = req.body;
 
     logger.info('Create payment method', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const paymentMethod = await userClient.createPaymentMethod(
@@ -418,8 +437,9 @@ export const createPaymentMethod = async (
       data: paymentMethod,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Create payment method error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -437,10 +457,11 @@ export const createPaymentMethod = async (
  * Update payment method
  */
 export const updatePaymentMethod = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
@@ -448,7 +469,7 @@ export const updatePaymentMethod = async (
     const { cardholderName, expiryMonth, expiryYear, isDefault } = req.body;
 
     logger.info('Update payment method', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       paymentId: id,
     });
 
@@ -463,8 +484,9 @@ export const updatePaymentMethod = async (
       data: paymentMethod,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Update payment method error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -482,17 +504,18 @@ export const updatePaymentMethod = async (
  * Delete payment method
  */
 export const deletePaymentMethod = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { id } = req.params;
 
     logger.info('Delete payment method', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       paymentId: id,
     });
 
@@ -503,8 +526,9 @@ export const deletePaymentMethod = async (
       message: 'Payment method deleted successfully',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Delete payment method error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -522,17 +546,18 @@ export const deletePaymentMethod = async (
  * Set payment method as default
  */
 export const setDefaultPaymentMethod = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { id } = req.params;
 
     logger.info('Set default payment method', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       paymentId: id,
     });
 
@@ -543,8 +568,9 @@ export const setDefaultPaymentMethod = async (
       data: paymentMethod,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Set default payment method error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -565,13 +591,14 @@ export const setDefaultPaymentMethod = async (
  * GET /api/user/wishlist
  * Get user wishlist
  */
-export const getWishlist = async (req: RequestWithCorrelationId, res: Response): Promise<void> => {
+export const getWishlist = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     logger.info('Get wishlist', {
-      correlationId: req.correlationId,
+      traceId, spanId,
     });
 
     const wishlist = await userClient.getWishlist(token);
@@ -581,8 +608,9 @@ export const getWishlist = async (req: RequestWithCorrelationId, res: Response):
       data: wishlist,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Get wishlist error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -600,17 +628,18 @@ export const getWishlist = async (req: RequestWithCorrelationId, res: Response):
  * Add item to wishlist
  */
 export const addToWishlist = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { productId } = req.body;
 
     logger.info('Add to wishlist', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       productId,
     });
 
@@ -621,8 +650,9 @@ export const addToWishlist = async (
       data: item,
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Add to wishlist error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 
@@ -640,17 +670,18 @@ export const addToWishlist = async (
  * Remove item from wishlist
  */
 export const removeFromWishlist = async (
-  req: RequestWithCorrelationId,
+  req: RequestWithTraceContext,
   res: Response
 ): Promise<void> => {
   try {
+    const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     const { id } = req.params;
 
     logger.info('Remove from wishlist', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       wishlistId: id,
     });
 
@@ -661,8 +692,9 @@ export const removeFromWishlist = async (
       message: 'Item removed from wishlist',
     });
   } catch (error: any) {
+    const { traceId, spanId } = req;
     logger.error('Remove from wishlist error', {
-      correlationId: req.correlationId,
+      traceId, spanId,
       error: error.message,
     });
 

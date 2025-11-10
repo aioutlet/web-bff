@@ -29,12 +29,15 @@ export class StorefrontAggregator {
    * OPTIMIZED: Single call to product service /storefront-data endpoint
    * Reduces service calls from 3-4 to 2 (storefront data + inventory)
    */
-  async getTrendingProducts(limit: number = 4, correlationId?: string): Promise<EnrichedProduct[]> {
+  async getTrendingProducts(
+    limit: number = 4,
+    traceId?: string,
+    spanId?: string
+  ): Promise<EnrichedProduct[]> {
     try {
-      const cid = correlationId || `storefront-trending-${Date.now()}`;
-
       logger.info('Fetching storefront data (trending products)', {
-        correlationId: cid,
+        traceId,
+        spanId,
         limit,
       });
 
@@ -44,7 +47,7 @@ export class StorefrontAggregator {
       const { trending_products } = await productClient.getStorefrontData(limit, 1);
 
       if (!trending_products || trending_products.length === 0) {
-        logger.warn('No trending products returned', { correlationId: cid });
+        logger.warn('No trending products returned', { traceId, spanId });
         return [];
       }
 
@@ -59,7 +62,8 @@ export class StorefrontAggregator {
       } catch (error) {
         logger.warn('Failed to fetch inventory data for trending products', {
           error,
-          correlationId: cid,
+          traceId,
+          spanId,
         });
       }
 
@@ -88,7 +92,8 @@ export class StorefrontAggregator {
       });
 
       logger.info('Trending products aggregation complete', {
-        correlationId: cid,
+        traceId,
+        spanId,
         count: enrichedProducts.length,
       });
 

@@ -3,13 +3,14 @@ import winston from 'winston';
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Console format for development
-const consoleFormat = printf(({ level, message, timestamp, correlationId, ...metadata }) => {
+const consoleFormat = printf(({ level, message, timestamp, traceId, spanId, ...metadata }: any) => {
   let msg = `${timestamp} [${level}]`;
-  
-  if (correlationId) {
-    msg += ` [${correlationId}]`;
+
+  // W3C Trace Context
+  if (traceId && spanId) {
+    msg += ` [${traceId.substring(0, 8)}...${spanId}]`;
   }
-  
+
   msg += `: ${message}`;
 
   const metaStr = Object.keys(metadata).length ? JSON.stringify(metadata, null, 2) : '';
@@ -21,12 +22,13 @@ const consoleFormat = printf(({ level, message, timestamp, correlationId, ...met
 });
 
 // JSON format for production
-const jsonFormat = printf(({ level, message, timestamp, correlationId, ...metadata }) => {
+const jsonFormat = printf(({ level, message, timestamp, traceId, spanId, ...metadata }: any) => {
   return JSON.stringify({
     timestamp,
     level,
     message,
-    correlationId: correlationId || 'no-correlation',
+    traceId,
+    spanId,
     ...metadata,
   });
 });
@@ -45,9 +47,9 @@ const logger = winston.createLogger({
   exitOnError: false,
 });
 
-// Add correlation ID helper
-export const withCorrelationId = (correlationId: string) => {
-  return logger.child({ correlationId });
+// Add trace context helper
+export const withTraceContext = (traceId: string, spanId: string) => {
+  return logger.child({ traceId, spanId });
 };
 
 export default logger;
