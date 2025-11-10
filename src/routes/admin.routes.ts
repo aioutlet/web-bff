@@ -1,12 +1,18 @@
 /**
  * Admin Dashboard Routes for Web BFF
  * Route definitions only - all logic is in admin.controller.ts
+ * All routes require admin authentication
  */
 
 import { Router, RequestHandler } from 'express';
 import * as adminController from '@controllers/admin.controller';
+import { requireAuth, requireAdmin } from '@middleware/auth.middleware';
 
 const router = Router();
+
+// Apply authentication and admin role check to all admin routes
+router.use(requireAuth as any);
+router.use(requireAdmin as any);
 
 // Dashboard Routes
 router.get('/dashboard/stats', adminController.getDashboardStats as unknown as RequestHandler);

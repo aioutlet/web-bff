@@ -1,5 +1,6 @@
 import express, { Application } from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import config from '@/core/config';
 import routes from '@routes/index';
 import { traceContextMiddleware } from '@middleware/traceContext.middleware';
@@ -23,6 +24,7 @@ app.use(
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Custom middleware
 app.use(traceContextMiddleware as any); // W3C Trace Context

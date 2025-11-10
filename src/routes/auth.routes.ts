@@ -5,26 +5,33 @@
 
 import { Router, RequestHandler } from 'express';
 import * as authController from '@controllers/auth.controller';
+import { requireAuth } from '@middleware/auth.middleware';
 
 const router = Router();
 
-// Authentication Routes
+// Public Authentication Routes (no auth required)
 router.post('/login', authController.login as unknown as RequestHandler);
 router.post('/register', authController.register as unknown as RequestHandler);
-router.post('/logout', authController.logout as unknown as RequestHandler);
 router.post('/refresh', authController.refreshToken as unknown as RequestHandler);
 
-// User Info Routes
-router.get('/me', authController.getCurrentUser as unknown as RequestHandler);
-router.get('/verify', authController.verifyToken as unknown as RequestHandler);
+// Protected Authentication Routes (require auth)
+router.post('/logout', requireAuth as any, authController.logout as unknown as RequestHandler);
+
+// User Info Routes (require auth)
+router.get('/me', requireAuth as any, authController.getCurrentUser as unknown as RequestHandler);
+router.get('/verify', requireAuth as any, authController.verifyToken as unknown as RequestHandler);
 
 // Email Verification Routes
 router.get('/email/verify', authController.verifyEmail as unknown as RequestHandler);
 router.post('/email/resend', authController.resendVerificationEmail as unknown as RequestHandler);
 
 // Password Management Routes
-router.post('/password/forgot', authController.forgotPassword as unknown as RequestHandler);
-router.post('/password/reset', authController.resetPassword as unknown as RequestHandler);
-router.post('/password/change', authController.changePassword as unknown as RequestHandler);
+router.post('/password/forgot', authController.forgotPassword as unknown as RequestHandler); // Public
+router.post('/password/reset', authController.resetPassword as unknown as RequestHandler); // Public (uses token from email)
+router.post(
+  '/password/change',
+  requireAuth as any,
+  authController.changePassword as unknown as RequestHandler
+); // Protected
 
 export default router;

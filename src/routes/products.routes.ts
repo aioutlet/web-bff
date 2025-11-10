@@ -1,12 +1,17 @@
 /**
  * Products Routes for Web BFF
  * Route definitions only - all logic is in products.controller.ts
+ * Uses optional authentication to provide personalized features when logged in
  */
 
 import { Router, RequestHandler } from 'express';
 import * as productsController from '@controllers/products.controller';
+import { optionalAuth } from '@middleware/auth.middleware';
 
 const router = Router();
+
+// Apply optional authentication to all product routes
+router.use(optionalAuth as any);
 
 // Product Routes
 router.get('/', productsController.getProducts as unknown as RequestHandler);

@@ -1,12 +1,17 @@
 /**
  * Order Routes for Web BFF
  * Route definitions only - all logic is in order.controller.ts
+ * All routes require authentication
  */
 
 import { Router, RequestHandler } from 'express';
 import * as orderController from '@controllers/order.controller';
+import { requireAuth } from '@middleware/auth.middleware';
 
 const router = Router();
+
+// Apply authentication to all order routes
+router.use(requireAuth as any);
 
 // Order Routes
 router.post('/', orderController.createOrder as unknown as RequestHandler);

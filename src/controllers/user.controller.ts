@@ -4,6 +4,7 @@
  */
 
 import { Response } from 'express';
+import { asyncHandler } from '@middleware/asyncHandler.middleware';
 import { userClient } from '@clients/user.client';
 import logger from '../core/logger';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
@@ -35,37 +36,23 @@ const requireAuth = (req: RequestWithTraceContext, res: Response): string | null
  * GET /api/user/profile
  * Get current user profile
  */
-export const getProfile = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const token = requireAuth(req, res);
-    if (!token) return;
+export const getProfile = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Get user profile', {
-      traceId, spanId,
-    });
+const { traceId, spanId } = req;
+const token = requireAuth(req, res);
+if (!token) return;
 
-    const profile = await userClient.getProfile(token);
+logger.info('Get user profile', {
+  traceId, spanId,
+});
 
-    res.json({
-      success: true,
-      data: profile,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Get user profile error', {
-      traceId, spanId,
-      error: error.message,
-    });
+const profile = await userClient.getProfile(token);
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Failed to get profile',
-      },
-    });
-  }
-};
+res.json({
+  success: true,
+  data: profile,
+});
+});
 
 /**
  * PATCH /api/user/profile
@@ -158,37 +145,23 @@ export const deleteAccount = async (
  * GET /api/user/addresses
  * Get all user addresses
  */
-export const getAddresses = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const token = requireAuth(req, res);
-    if (!token) return;
+export const getAddresses = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Get user addresses', {
-      traceId, spanId,
-    });
+const { traceId, spanId } = req;
+const token = requireAuth(req, res);
+if (!token) return;
 
-    const addresses = await userClient.getAddresses(token);
+logger.info('Get user addresses', {
+  traceId, spanId,
+});
 
-    res.json({
-      success: true,
-      data: addresses,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Get user addresses error', {
-      traceId, spanId,
-      error: error.message,
-    });
+const addresses = await userClient.getAddresses(token);
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Failed to get addresses',
-      },
-    });
-  }
-};
+res.json({
+  success: true,
+  data: addresses,
+});
+});
 
 /**
  * POST /api/user/addresses
@@ -591,37 +564,23 @@ export const setDefaultPaymentMethod = async (
  * GET /api/user/wishlist
  * Get user wishlist
  */
-export const getWishlist = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const token = requireAuth(req, res);
-    if (!token) return;
+export const getWishlist = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Get wishlist', {
-      traceId, spanId,
-    });
+const { traceId, spanId } = req;
+const token = requireAuth(req, res);
+if (!token) return;
 
-    const wishlist = await userClient.getWishlist(token);
+logger.info('Get wishlist', {
+  traceId, spanId,
+});
 
-    res.json({
-      success: true,
-      data: wishlist,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Get wishlist error', {
-      traceId, spanId,
-      error: error.message,
-    });
+const wishlist = await userClient.getWishlist(token);
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Failed to get wishlist',
-      },
-    });
-  }
-};
+res.json({
+  success: true,
+  data: wishlist,
+});
+});
 
 /**
  * POST /api/user/wishlist

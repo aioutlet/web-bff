@@ -4,6 +4,7 @@
  */
 
 import { Response } from 'express';
+import { asyncHandler } from '@middleware/asyncHandler.middleware';
 import { cartClient } from '@clients/cart.client';
 import logger from '../core/logger';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
@@ -59,274 +60,190 @@ const requireAuth = (
  * GET /api/cart
  * Get authenticated user's cart
  */
-export const getCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const getCart = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Fetching user cart', {
-      traceId, spanId,
-      userId: auth.userId,
-    });
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Fetching user cart', {
+  traceId, spanId,
+  userId: auth.userId,
+});
 
-    const cart = await cartClient.getCart(headers);
-
-    res.json({
-      success: true,
-      data: cart,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error fetching user cart', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to fetch cart',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const cart = await cartClient.getCart(headers);
+
+res.json({
+  success: true,
+  data: cart,
+});
+});
 
 /**
  * POST /api/cart/items
  * Add item to authenticated user's cart
  */
-export const addItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const addItem = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Adding item to cart', {
-      traceId, spanId,
-      userId: auth.userId,
-      productId: req.body.productId,
-    });
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Adding item to cart', {
+  traceId, spanId,
+  userId: auth.userId,
+  productId: req.body.productId,
+});
 
-    const cart = await cartClient.addItem(req.body, headers);
-
-    res.status(200).json({
-      success: true,
-      data: cart,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error adding item to cart', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.error || 'Failed to add item to cart',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const cart = await cartClient.addItem(req.body, headers);
+
+res.status(200).json({
+  success: true,
+  data: cart,
+});
+});
 
 /**
  * PUT /api/cart/items/:productId
  * Update item quantity in authenticated user's cart
  */
-export const updateItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const updateItem = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    const { productId } = req.params;
-    const { quantity } = req.body;
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    logger.info('Updating cart item', {
-      traceId, spanId,
-      userId: auth.userId,
-      productId,
-      quantity,
-    });
+const { productId } = req.params;
+const { quantity } = req.body;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Updating cart item', {
+  traceId, spanId,
+  userId: auth.userId,
+  productId,
+  quantity,
+});
 
-    const cart = await cartClient.updateItem(productId, quantity, headers);
-
-    res.json({
-      success: true,
-      data: cart,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error updating cart item', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to update cart item',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const cart = await cartClient.updateItem(productId, quantity, headers);
+
+res.json({
+  success: true,
+  data: cart,
+});
+});
 
 /**
  * DELETE /api/cart/items/:productId
  * Remove item from authenticated user's cart
  */
-export const removeItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const removeItem = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    const { productId } = req.params;
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    logger.info('Removing item from cart', {
-      traceId, spanId,
-      userId: auth.userId,
-      productId,
-    });
+const { productId } = req.params;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Removing item from cart', {
+  traceId, spanId,
+  userId: auth.userId,
+  productId,
+});
 
-    const cart = await cartClient.removeItem(productId, headers);
-
-    res.json({
-      success: true,
-      data: cart,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error removing item from cart', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to remove item from cart',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const cart = await cartClient.removeItem(productId, headers);
+
+res.json({
+  success: true,
+  data: cart,
+});
+});
 
 /**
  * DELETE /api/cart
  * Clear authenticated user's cart
  */
-export const clearCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const clearCart = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Clearing cart', {
-      traceId, spanId,
-      userId: auth.userId,
-    });
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Clearing cart', {
+  traceId, spanId,
+  userId: auth.userId,
+});
 
-    await cartClient.clearCart(headers);
-
-    res.json({
-      success: true,
-      message: 'Cart cleared successfully',
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error clearing cart', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to clear cart',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+await cartClient.clearCart(headers);
+
+res.json({
+  success: true,
+  message: 'Cart cleared successfully',
+});
+});
 
 /**
  * POST /api/cart/transfer
  * Transfer guest cart to authenticated user
  */
-export const transferCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const transferCart = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    const { guestId } = req.body;
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    if (!guestId) {
-      res.status(400).json({
-        success: false,
-        error: { message: 'Guest ID is required' },
-      });
-      return;
-    }
+const { guestId } = req.body;
 
-    logger.info('Transferring guest cart to user', {
-      traceId, spanId,
-      userId: auth.userId,
-      guestId,
-    });
+if (!guestId) {
+  res.status(400).json({
+    success: false,
+    error: { message: 'Guest ID is required' },
+  });
+  return;
+}
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Transferring guest cart to user', {
+  traceId, spanId,
+  userId: auth.userId,
+  guestId,
+});
 
-    const cart = await cartClient.transferCart(guestId, headers);
-
-    res.json({
-      success: true,
-      data: cart,
-      message: 'Cart transferred successfully',
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error transferring cart', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to transfer cart',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const cart = await cartClient.transferCart(guestId, headers);
+
+res.json({
+  success: true,
+  data: cart,
+  message: 'Cart transferred successfully',
+});
+});
 
 // ============================================================================
 // Guest Cart Controllers
@@ -336,74 +253,46 @@ export const transferCart = async (req: RequestWithTraceContext, res: Response):
  * GET /api/cart/guest/:guestId
  * Get guest cart
  */
-export const getGuestCart = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const { guestId } = req.params;
+export const getGuestCart = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Fetching guest cart', {
-      traceId, spanId,
-      guestId,
-    });
+const { traceId, spanId } = req;
+const { guestId } = req.params;
 
-    const cart = await cartClient.getGuestCart(guestId);
+logger.info('Fetching guest cart', {
+  traceId, spanId,
+  guestId,
+});
 
-    res.json({
-      success: true,
-      data: cart,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error fetching guest cart', {
-      traceId, spanId,
-      error: error.message,
-    });
+const cart = await cartClient.getGuestCart(guestId);
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to fetch guest cart',
-      },
-    });
-  }
-};
+res.json({
+  success: true,
+  data: cart,
+});
+});
 
 /**
  * POST /api/cart/guest/:guestId/items
  * Add item to guest cart
  */
-export const addGuestItem = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const { guestId } = req.params;
+export const addGuestItem = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Adding item to guest cart', {
-      traceId, spanId,
-      guestId,
-      productId: req.body.productId,
-    });
+const { traceId, spanId } = req;
+const { guestId } = req.params;
 
-    const cart = await cartClient.addGuestItem(guestId, req.body);
+logger.info('Adding item to guest cart', {
+  traceId, spanId,
+  guestId,
+  productId: req.body.productId,
+});
 
-    res.status(200).json({
-      success: true,
-      data: cart,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error adding item to guest cart', {
-      traceId, spanId,
-      error: error.message,
-    });
+const cart = await cartClient.addGuestItem(guestId, req.body);
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to add item to guest cart',
-      },
-    });
-  }
-};
+res.status(200).json({
+  success: true,
+  data: cart,
+});
+});
 
 /**
  * PUT /api/cart/guest/:guestId/items/:productId

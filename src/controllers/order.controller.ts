@@ -4,6 +4,7 @@
  */
 
 import { Response } from 'express';
+import { asyncHandler } from '@middleware/asyncHandler.middleware';
 import { orderClient } from '@clients/order.client';
 import logger from '../core/logger';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
@@ -59,98 +60,69 @@ const requireAuth = (
  * POST /api/orders
  * Create a new order (customer only)
  */
-export const createOrder = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const createOrder = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Creating order', {
-      traceId, spanId,
-      customerId: auth.userId,
-    });
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    // Set customer ID from JWT token
-    const orderData = {
-      ...req.body,
-      customerId: auth.userId,
-    };
+logger.info('Creating order', {
+  traceId, spanId,
+  customerId: auth.userId,
+});
 
-    // Forward JWT token to order service
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
-
-    const order = await orderClient.createOrder(orderData, headers);
-
-    logger.info('Order created successfully', {
-      traceId, spanId,
-      orderId: order.id,
-    });
-
-    res.status(201).json({
-      success: true,
-      data: order,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error creating order', {
-      traceId, spanId,
-      error: error.message,
-      statusCode: error.response?.status,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Failed to create order',
-      },
-    });
-  }
+// Set customer ID from JWT token
+const orderData = {
+  ...req.body,
+  customerId: auth.userId,
 };
+
+// Forward JWT token to order service
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
+};
+
+const order = await orderClient.createOrder(orderData, headers);
+
+logger.info('Order created successfully', {
+  traceId, spanId,
+  orderId: order.id,
+});
+
+res.status(201).json({
+  success: true,
+  data: order,
+});
+});
 
 /**
  * GET /api/orders/my
  * Get current user's orders
  */
-export const getMyOrders = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const getMyOrders = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    logger.info('Fetching user orders', {
-      traceId, spanId,
-      customerId: auth.userId,
-    });
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Fetching user orders', {
+  traceId, spanId,
+  customerId: auth.userId,
+});
 
-    const orders = await orderClient.getMyOrders(auth.userId, headers);
-
-    res.json({
-      success: true,
-      data: orders,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error fetching user orders', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: 'Failed to fetch orders',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const orders = await orderClient.getMyOrders(auth.userId, headers);
+
+res.json({
+  success: true,
+  data: orders,
+});
+});
 
 /**
  * GET /api/orders/my/paged
@@ -208,44 +180,28 @@ export const getMyOrdersPaged = async (
  * GET /api/orders/:id
  * Get order by ID (customer can view own orders)
  */
-export const getOrderById = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const auth = requireAuth(req, res);
-    if (!auth) return;
+export const getOrderById = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    const { id } = req.params;
+const { traceId, spanId } = req;
+const auth = requireAuth(req, res);
+if (!auth) return;
 
-    logger.info('Fetching order', {
-      traceId, spanId,
-      orderId: id,
-    });
+const { id } = req.params;
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+logger.info('Fetching order', {
+  traceId, spanId,
+  orderId: id,
+});
 
-    const order = await orderClient.getOrderById(id, headers);
-
-    res.json({
-      success: true,
-      data: order,
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Error fetching order', {
-      traceId, spanId,
-      orderId: req.params.id,
-      error: error.message,
-    });
-
-    const statusCode = error.response?.status || 500;
-    res.status(statusCode).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Failed to fetch order',
-      },
-    });
-  }
+const headers: Record<string, string> = {
+  authorization: req.headers.authorization || '',
+  'x-correlation-id': req.correlationId || '',
 };
+
+const order = await orderClient.getOrderById(id, headers);
+
+res.json({
+  success: true,
+  data: order,
+});
+});

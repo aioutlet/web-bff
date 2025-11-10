@@ -4,6 +4,7 @@
  */
 
 import { Response } from 'express';
+import { asyncHandler } from '@middleware/asyncHandler.middleware';
 import { authClient } from '@clients/auth.client';
 import logger from '../core/logger';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
@@ -12,157 +13,91 @@ import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
  * POST /api/auth/login
  * User login
  */
-export const login = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { email, password } = req.body;
+export const login = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { email, password } = req.body;
 
-    logger.info('Login attempt', {
-      traceId, spanId,
-      email,
-    });
+logger.info('Login attempt', {
+  traceId, spanId,
+  email,
+});
 
-    const data = await authClient.login(
-      { email, password },
-      {
-        'traceparent': `00-${traceId}-${spanId}-01`,
-      }
-    );
-
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Login error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    // Extract error message - Auth Service returns { success: false, error: "message" }
-    const errorMessage =
-      error.response?.data?.error || // Auth Service format (error is a string)
-      error.response?.data?.message || // Alternative format
-      'Login failed';
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: errorMessage,
-      },
-    });
+const data = await authClient.login(
+  { email, password },
+  {
+    'traceparent': `00-${traceId}-${spanId}-01`,
   }
-};
+);
+
+res.json(data);
+});
 
 /**
  * POST /api/auth/register
  * User registration
  */
-export const register = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { email, password, firstName, lastName, phoneNumber } = req.body;
+export const register = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { email, password, firstName, lastName, phoneNumber } = req.body;
 
-    logger.info('Registration attempt', {
-      traceId, spanId,
-      email,
-    });
+logger.info('Registration attempt', {
+  traceId, spanId,
+  email,
+});
 
-    const data = await authClient.register(
-      { email, password, firstName, lastName, phoneNumber },
-      {
-        'traceparent': `00-${traceId}-${spanId}-01`,
-      }
-    );
-
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Registration error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Registration failed',
-      },
-    });
+const data = await authClient.register(
+  { email, password, firstName, lastName, phoneNumber },
+  {
+    'traceparent': `00-${traceId}-${spanId}-01`,
   }
-};
+);
+
+res.json(data);
+});
 
 /**
  * POST /api/auth/logout
  * User logout
  */
-export const logout = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { refreshToken } = req.body;
+export const logout = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { refreshToken } = req.body;
 
-    logger.info('Logout attempt', {
-      traceId, spanId,
-    });
+logger.info('Logout attempt', {
+  traceId, spanId,
+});
 
-    await authClient.logout(refreshToken, {
-      'traceparent': `00-${traceId}-${spanId}-01`,
-    });
+await authClient.logout(refreshToken, {
+  'traceparent': `00-${traceId}-${spanId}-01`,
+});
 
-    res.json({
-      success: true,
-      message: 'Logged out successfully',
-    });
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Logout error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Logout failed',
-      },
-    });
-  }
-};
+res.json({
+  success: true,
+  message: 'Logged out successfully',
+});
+});
 
 /**
  * POST /api/auth/refresh
  * Refresh access token
  */
-export const refreshToken = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { refreshToken } = req.body;
+export const refreshToken = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { refreshToken } = req.body;
 
-    logger.info('Token refresh attempt', {
-      traceId, spanId,
-    });
+logger.info('Token refresh attempt', {
+  traceId, spanId,
+});
 
-    const data = await authClient.refreshToken(
-      { refreshToken },
-      {
-        'traceparent': `00-${traceId}-${spanId}-01`,
-      }
-    );
-
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Token refresh error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Token refresh failed',
-      },
-    });
+const data = await authClient.refreshToken(
+  { refreshToken },
+  {
+    'traceparent': `00-${traceId}-${spanId}-01`,
   }
-};
+);
+
+res.json(data);
+});
 
 /**
  * GET /api/auth/me
@@ -213,195 +148,122 @@ export const getCurrentUser = async (
  * GET /api/auth/verify
  * Verify JWT token (dedicated token verification endpoint)
  */
-export const verifyToken = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const token = req.headers.authorization?.replace('Bearer ', '');
+export const verifyToken = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    if (!token) {
-      res.status(401).json({
-        success: false,
-        error: { message: 'Authorization token required' },
-      });
-      return;
-    }
+const { traceId, spanId } = req;
+const token = req.headers.authorization?.replace('Bearer ', '');
 
-    logger.info('Token verification attempt', {
-      traceId, spanId,
-    });
+if (!token) {
+  res.status(401).json({
+    success: false,
+    error: { message: 'Authorization token required' },
+  });
+  return;
+}
 
-    const data = await authClient.verifyToken(token, {
-      'traceparent': `00-${traceId}-${spanId}-01`,
-    });
+logger.info('Token verification attempt', {
+  traceId, spanId,
+});
 
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Token verification error', {
-      traceId, spanId,
-      error: error.message,
-    });
+const data = await authClient.verifyToken(token, {
+  'traceparent': `00-${traceId}-${spanId}-01`,
+});
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Token verification failed',
-      },
-    });
-  }
-};
+res.json(data);
+});
 
 /**
  * GET /api/auth/email/verify
  * Verify email with token
  */
-export const verifyEmail = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
-  try {
-    const { traceId, spanId } = req;
-    const { token } = req.query;
+export const verifyEmail = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
 
-    if (!token || typeof token !== 'string') {
-      res.status(400).json({
-        success: false,
-        error: { message: 'Token is required' },
-      });
-      return;
-    }
+const { traceId, spanId } = req;
+const { token } = req.query;
 
-    logger.info('Email verification attempt', {
-      traceId, spanId,
-    });
+if (!token || typeof token !== 'string') {
+  res.status(400).json({
+    success: false,
+    error: { message: 'Token is required' },
+  });
+  return;
+}
 
-    const data = await authClient.verifyEmail(token, {
-      'traceparent': `00-${traceId}-${spanId}-01`,
-    });
+logger.info('Email verification attempt', {
+  traceId, spanId,
+});
 
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Email verification error', {
-      traceId, spanId,
-      error: error.message,
-    });
+const data = await authClient.verifyEmail(token, {
+  'traceparent': `00-${traceId}-${spanId}-01`,
+});
 
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Email verification failed',
-      },
-    });
-  }
-};
+res.json(data);
+});
 
 /**
  * POST /api/auth/email/resend
  * Resend verification email
  */
-export const resendVerificationEmail = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { email } = req.body;
+export const resendVerificationEmail = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { email } = req.body;
 
-    logger.info('Resend verification email', {
-      traceId, spanId,
-      email,
-    });
+logger.info('Resend verification email', {
+  traceId, spanId,
+  email,
+});
 
-    const data = await authClient.resendVerificationEmail(email, {
-      'traceparent': `00-${traceId}-${spanId}-01`,
-    });
+const data = await authClient.resendVerificationEmail(email, {
+  'traceparent': `00-${traceId}-${spanId}-01`,
+});
 
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Resend verification email error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Failed to resend verification email',
-      },
-    });
-  }
-};
+res.json(data);
+});
 
 /**
  * POST /api/auth/password/forgot
  * Request password reset
  */
-export const forgotPassword = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { email } = req.body;
+export const forgotPassword = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { email } = req.body;
 
-    logger.info('Password reset request', {
-      traceId, spanId,
-      email,
-    });
+logger.info('Password reset request', {
+  traceId, spanId,
+  email,
+});
 
-    const data = await authClient.forgotPassword(
-      { email },
-      {
-        'traceparent': `00-${traceId}-${spanId}-01`,
-      }
-    );
-
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Password reset request error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Password reset request failed',
-      },
-    });
+const data = await authClient.forgotPassword(
+  { email },
+  {
+    'traceparent': `00-${traceId}-${spanId}-01`,
   }
-};
+);
+
+res.json(data);
+});
 
 /**
  * POST /api/auth/password/reset
  * Reset password with token
  */
-export const resetPassword = async (req: RequestWithTraceContext, res: Response) => {
-  try {
-    const { traceId, spanId } = req;
-    const { token, password } = req.body;
+export const resetPassword = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+const { token, password } = req.body;
 
-    logger.info('Password reset', {
-      traceId, spanId,
-    });
+logger.info('Password reset', {
+  traceId, spanId,
+});
 
-    const data = await authClient.resetPassword(
-      { token, password },
-      {
-        'traceparent': `00-${traceId}-${spanId}-01`,
-      }
-    );
-
-    res.json(data);
-  } catch (error: any) {
-    const { traceId, spanId } = req;
-    logger.error('Password reset error', {
-      traceId, spanId,
-      error: error.message,
-    });
-
-    res.status(error.response?.status || 500).json({
-      success: false,
-      error: {
-        message: error.response?.data?.message || 'Password reset failed',
-      },
-    });
+const data = await authClient.resetPassword(
+  { token, password },
+  {
+    'traceparent': `00-${traceId}-${spanId}-01`,
   }
-};
+);
+
+res.json(data);
+});
 
 /**
  * POST /api/auth/password/change
