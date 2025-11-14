@@ -9,7 +9,6 @@ interface DaprConfig {
   grpcPort: number;
   appPort: number;
   pubsubName: string;
-  secretStoreName: string;
 }
 
 interface Config {
@@ -36,16 +35,15 @@ interface Config {
 
 const config: Config = {
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '3100', 10),
+  port: parseInt(process.env.PORT || '8080', 10),
   host: process.env.HOST || '0.0.0.0',
   allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   dapr: {
     host: process.env.DAPR_HOST || '127.0.0.1',
-    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3600', 10),
-    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50060', 10),
-    appPort: parseInt(process.env.PORT || '3100', 10),
-    pubsubName: process.env.DAPR_PUBSUB_NAME || 'rabbitmq-pubsub',
-    secretStoreName: process.env.DAPR_SECRET_STORE_NAME || 'local-secret-store',
+    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3580', 10),
+    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50080', 10),
+    appPort: parseInt(process.env.PORT || '8080', 10),
+    pubsubName: process.env.DAPR_PUBSUB_NAME || 'web-bff-pubsub',
   },
   services: {
     product: process.env.PRODUCT_SERVICE_APP_ID || 'product-service',

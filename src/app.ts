@@ -5,6 +5,7 @@ import config from '@/core/config';
 import routes from '@routes/index';
 import { traceContextMiddleware } from '@middleware/traceContext.middleware';
 import { errorMiddleware } from '@middleware/error.middleware';
+import homeRoutes from '@routes/home.routes';
 import operationalRoutes from '@routes/operational.routes';
 
 const app: Application = express();
@@ -29,10 +30,9 @@ app.use(cookieParser());
 // Custom middleware
 app.use(traceContextMiddleware as any); // W3C Trace Context
 
-// Operational routes (no /api prefix)
-app.use('/', operationalRoutes);
-
 // API routes
+app.use('/', homeRoutes);
+app.use('/', operationalRoutes);
 app.use('/api', routes);
 
 // 404 handler

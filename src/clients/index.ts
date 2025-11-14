@@ -4,7 +4,6 @@
  */
 
 export { default as daprClient } from './dapr.client.service.js';
-export { default as secretManager } from './dapr.secret.manager.js';
 
 // Service clients
 export { authClient } from './auth.client.js';
