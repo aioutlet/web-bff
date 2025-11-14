@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import { HttpMethod } from '@dapr/dapr';
 import { RequestWithTraceContext } from './traceContext.middleware';
 import logger from '../core/logger';
-import { daprClient } from '@clients/dapr.service.client';
+import { daprClient } from '@clients/dapr.client.service';
 import config from '@/core/config';
 
 // Extend request interface to include user information
@@ -27,7 +27,7 @@ export interface RequestWithAuth extends RequestWithTraceContext {
 let jwtConfigCache: { secret: string; algorithm: string } | null = null;
 
 /**
- * Get JWT configuration from Dapr secret store
+ * Get JWT configuration from auth service
  */
 async function getJwtConfig(): Promise<{ secret: string; algorithm: string }> {
   if (jwtConfigCache) {
@@ -35,7 +35,7 @@ async function getJwtConfig(): Promise<{ secret: string; algorithm: string }> {
   }
 
   try {
-    // Get JWT secret from Dapr secret store
+    // Get JWT secret from auth service via Dapr
     const secretStoreResponse = await daprClient.invokeService(
       config.services.auth,
       'api/config/jwt',
@@ -44,20 +44,19 @@ async function getJwtConfig(): Promise<{ secret: string; algorithm: string }> {
       {}
     );
 
+    if (!secretStoreResponse?.secret) {
+      throw new Error('JWT secret not found in auth service response');
+    }
+
     jwtConfigCache = {
-      secret: secretStoreResponse.secret || process.env.JWT_SECRET || 'fallback-secret-key',
+      secret: secretStoreResponse.secret,
       algorithm: secretStoreResponse.algorithm || 'HS256',
     };
 
     return jwtConfigCache;
   } catch (error) {
-    logger.warn('Failed to fetch JWT config from auth service, using fallback', { error });
-
-    // Fallback to environment variable
-    return {
-      secret: process.env.JWT_SECRET || 'fallback-secret-key',
-      algorithm: 'HS256',
-    };
+    logger.error('Failed to fetch JWT config from auth service', { error });
+    throw new Error('Unable to retrieve JWT configuration from auth service');
   }
 }
 

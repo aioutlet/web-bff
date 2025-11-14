@@ -3,7 +3,7 @@
  * Exports clients for external service communication
  */
 
-export { default as daprClient } from './dapr.service.client.js';
+export { default as daprClient } from './dapr.client.service.js';
 export { default as secretManager } from './dapr.secret.manager.js';
 
 // Service clients

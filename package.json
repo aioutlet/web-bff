@@ -4,10 +4,9 @@
   "description": "Backend for Frontend (BFF) service for web UI - aggregates data from multiple microservices",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --watch src --exec ts-node -r tsconfig-paths/register src/server.ts",
-    "dapr": "cross-env DAPR_ENABLED=true dotenv -e .env -- dapr run --app-id web-bff --app-port 3100 --dapr-http-port 3600 --dapr-grpc-port 50060 --log-level warn --config ./.dapr/config.yaml --resources-path ./.dapr/components -- node dist/server.js",
     "build": "tsc && tsc-alias",
-    "start": "node dist/server.js",
+    "start": "dapr run --app-id web-bff --app-port 3100 --dapr-http-port 3600 --dapr-grpc-port 50060 --log-level warn --config ./.dapr/config.yaml --resources-path ./.dapr/components -- node dist/server.js",
+    "dev": "dapr run --app-id web-bff --app-port 3100 --dapr-http-port 3600 --dapr-grpc-port 50060 --log-level warn --config ./.dapr/config.yaml --resources-path ./.dapr/components -- npx tsx watch src/server.ts",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "test:integration": "jest --testPathPattern=integration",

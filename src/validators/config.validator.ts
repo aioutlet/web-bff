@@ -111,18 +111,6 @@ const validationRules: Record<string, ValidationRule> = {
     errorMessage: 'ALLOWED_ORIGINS must be a comma-separated list of valid URLs or *',
   },
 
-  // Service Configuration
-  SERVICE_TIMEOUT: {
-    required: false,
-    validator: (value) => !isNaN(parseInt(value, 10)) && parseInt(value, 10) > 0,
-    errorMessage: 'SERVICE_TIMEOUT must be a positive number',
-  },
-  SERVICE_RETRY_COUNT: {
-    required: false,
-    validator: (value) => !isNaN(parseInt(value, 10)) && parseInt(value, 10) >= 0,
-    errorMessage: 'SERVICE_RETRY_COUNT must be a non-negative number',
-  },
-
   // Logging Configuration
   LOG_LEVEL: {
     required: false,

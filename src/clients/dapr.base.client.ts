@@ -107,7 +107,7 @@ export class DaprBaseClient {
   ): Promise<T> {
     // Lazy load Dapr modules only when needed
     const { HttpMethod } = await import('@dapr/dapr');
-    const { daprClient } = await import('./dapr.service.client.js');
+    const { daprClient } = await import('./dapr.client.service.js');
 
     const methodMap: Record<string, any> = {
       GET: HttpMethod.GET,

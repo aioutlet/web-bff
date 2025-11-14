@@ -3,18 +3,21 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config();
 
+interface DaprConfig {
+  host: string;
+  httpPort: number;
+  grpcPort: number;
+  appPort: number;
+  pubsubName: string;
+  secretStoreName: string;
+}
+
 interface Config {
   env: string;
   port: number;
   host: string;
   allowedOrigins: string[];
-  dapr: {
-    enabled: boolean;
-    host: string;
-    httpPort: string;
-    grpcPort: string;
-    pubsubName: string;
-  };
+  dapr: DaprConfig;
   services: {
     product: string;
     inventory: string;
@@ -24,11 +27,6 @@ interface Config {
     cart: string;
     order: string;
     admin: string;
-  };
-  serviceConfig: {
-    timeout: number;
-    retryCount: number;
-    retryDelay: number;
   };
   logging: {
     level: string;
@@ -42,11 +40,12 @@ const config: Config = {
   host: process.env.HOST || '0.0.0.0',
   allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
   dapr: {
-    enabled: process.env.DAPR_ENABLED === 'true',
     host: process.env.DAPR_HOST || '127.0.0.1',
-    httpPort: process.env.DAPR_HTTP_PORT || '3600',
-    grpcPort: process.env.DAPR_GRPC_PORT || '50060',
+    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3600', 10),
+    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50060', 10),
+    appPort: parseInt(process.env.PORT || '3100', 10),
     pubsubName: process.env.DAPR_PUBSUB_NAME || 'rabbitmq-pubsub',
+    secretStoreName: process.env.DAPR_SECRET_STORE_NAME || 'local-secret-store',
   },
   services: {
     product: process.env.PRODUCT_SERVICE_APP_ID || 'product-service',
@@ -57,11 +56,6 @@ const config: Config = {
     cart: process.env.CART_SERVICE_APP_ID || 'cart-service',
     order: process.env.ORDER_SERVICE_APP_ID || 'order-service',
     admin: process.env.ADMIN_SERVICE_APP_ID || 'admin-service',
-  },
-  serviceConfig: {
-    timeout: parseInt(process.env.SERVICE_TIMEOUT || '5000', 10),
-    retryCount: parseInt(process.env.SERVICE_RETRY_COUNT || '3', 10),
-    retryDelay: parseInt(process.env.SERVICE_RETRY_DELAY || '1000', 10),
   },
   logging: {
     level: process.env.LOG_LEVEL || 'info',

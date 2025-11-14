@@ -1,25 +1,19 @@
-import { DaprClient, HttpMethod } from '@dapr/dapr';
+import { DaprClient, HttpMethod, CommunicationProtocolEnum } from '@dapr/dapr';
+import config from '../core/config.js';
 
 interface InvokeMetadata {
   headers?: Record<string, string>;
 }
 
-class DaprClientWrapper {
+class DaprClientService {
   private client: DaprClient | null = null;
-  private daprHost: string;
-  private daprPort: string;
-
-  constructor() {
-    this.daprHost = process.env.DAPR_HOST || '127.0.0.1';
-    this.daprPort = process.env.DAPR_HTTP_PORT || '3600';
-    // Don't initialize client here - lazy load only when needed
-  }
 
   private ensureClient(): DaprClient {
     if (!this.client) {
       this.client = new DaprClient({
-        daprHost: this.daprHost,
-        daprPort: this.daprPort,
+        daprHost: config.dapr.host,
+        daprPort: String(config.dapr.httpPort),
+        communicationProtocol: CommunicationProtocolEnum.HTTP,
       });
     }
     return this.client;
@@ -61,10 +55,9 @@ class DaprClientWrapper {
    * @returns Promise that resolves when the event is published
    */
   async publishEvent(topicName: string, eventData: any): Promise<void> {
-    const pubsubName = process.env.DAPR_PUBSUB_NAME || 'rabbitmq-pubsub';
     try {
       const client = this.ensureClient();
-      await client.pubsub.publish(pubsubName, topicName, eventData);
+      await client.pubsub.publish(config.dapr.pubsubName, topicName, eventData);
       console.log(`[Dapr] Event published to topic: ${topicName}`);
     } catch (error: any) {
       console.error(`[Dapr] Failed to publish event to ${topicName}`, {
@@ -84,5 +77,5 @@ class DaprClientWrapper {
 }
 
 // Export singleton instance
-export const daprClient = new DaprClientWrapper();
+export const daprClient = new DaprClientService();
 export default daprClient;
