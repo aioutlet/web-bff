@@ -20,7 +20,6 @@ async function startServer() {
       logger.info(`Web BFF running on ${HOST}:${PORT} in ${config.env} mode`, {
         service: 'web-bff',
         version: '1.0.0',
-        daprEnabled: config.dapr.enabled,
       });
     });
 

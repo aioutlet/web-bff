@@ -1,5 +1,4 @@
 import logger from '../core/logger';
-import config from '@/core/config';
 
 export class DaprBaseClient {
   protected serviceName: string;
