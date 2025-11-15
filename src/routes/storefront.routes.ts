@@ -10,8 +10,16 @@ import { optionalAuth } from '@middleware/auth.middleware';
 const router = Router();
 
 // Storefront Home Routes - with optional auth for personalization
+// Combined endpoint - fetch both trending products and categories in one request
 router.get(
-  '/trending',
+  '/home',
+  optionalAuth as any,
+  storefrontController.getHomeData as unknown as RequestHandler
+);
+
+// Individual endpoints (kept for backward compatibility)
+router.get(
+  '/trending-products',
   optionalAuth as any,
   storefrontController.getTrendingProducts as unknown as RequestHandler
 );

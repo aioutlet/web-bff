@@ -10,6 +10,37 @@ import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import { asyncHandler } from '@middleware/asyncHandler.middleware';
 
 /**
+ * Get home page data (trending products and categories combined)
+ */
+export const getHomeData = asyncHandler(
+  async (req: RequestWithTraceContext, res: Response) => {
+    const { traceId, spanId } = req;
+    const productsLimit = parseInt(req.query.productsLimit as string) || 4;
+    const categoriesLimit = parseInt(req.query.categoriesLimit as string) || 5;
+
+    logger.info('Fetching home page data', {
+      traceId,
+      spanId,
+      productsLimit,
+      categoriesLimit,
+    });
+
+    // Single call to product service via aggregator (which calls /storefront-data)
+    const homeData = await storefrontAggregator.getHomeData(
+      productsLimit,
+      categoriesLimit,
+      traceId,
+      spanId
+    );
+
+    res.json({
+      success: true,
+      data: homeData,
+    });
+  }
+);
+
+/**
  * Get trending products with inventory and reviews
  */
 export const getTrendingProducts = asyncHandler(

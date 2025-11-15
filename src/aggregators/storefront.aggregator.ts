@@ -25,6 +25,98 @@ export interface EnrichedCategory extends TrendingCategory {
 
 export class StorefrontAggregator {
   /**
+   * Get home page data (trending products and categories) in a single call
+   * OPTIMIZED: Single call to product service /storefront-data endpoint
+   * Reduces service calls from 6+ to 2 (storefront data + inventory)
+   */
+  async getHomeData(
+    productsLimit: number = 4,
+    categoriesLimit: number = 5,
+    traceId?: string,
+    spanId?: string
+  ): Promise<{
+    trendingProducts: EnrichedProduct[];
+    trendingCategories: EnrichedCategory[];
+  }> {
+    try {
+      logger.info('Fetching home page data (single call optimization)', {
+        traceId,
+        spanId,
+        productsLimit,
+        categoriesLimit,
+      });
+
+      // Single call to product service for both trending products and categories
+      const { trending_products, trending_categories } = await productClient.getStorefrontData(
+        productsLimit,
+        categoriesLimit
+      );
+
+      // Process products with inventory enrichment
+      let enrichedProducts: EnrichedProduct[] = [];
+      if (trending_products && trending_products.length > 0) {
+        const skus = trending_products.map((p) => p.sku).filter((sku): sku is string => Boolean(sku));
+
+        // Fetch inventory data in parallel
+        let inventoryMap = new Map<string, InventoryItem>();
+        try {
+          const inventoryData = await inventoryClient.getInventoryBatch(skus);
+          inventoryData.forEach((item) => inventoryMap.set(item.sku, item));
+        } catch (error) {
+          logger.warn('Failed to fetch inventory data', { error, traceId, spanId });
+        }
+
+        // Map to EnrichedProduct format
+        enrichedProducts = trending_products.map((product) => {
+          const inventory = product.sku ? inventoryMap.get(product.sku) : undefined;
+
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description || '',
+            price: product.price,
+            category: product.category || '',
+            sku: product.sku || '',
+            images: product.images,
+            isActive: product.isActive,
+            inventory: {
+              inStock: inventory ? inventory.quantityAvailable > 0 : false,
+              availableQuantity: inventory?.quantityAvailable || 0,
+            },
+            reviews: {
+              averageRating: (product as any).review_aggregates?.average_rating || 0,
+              reviewCount: (product as any).review_aggregates?.total_review_count || 0,
+            },
+          };
+        });
+      }
+
+      // Process categories with enrichment
+      let enrichedCategories: EnrichedCategory[] = [];
+      if (trending_categories && trending_categories.length > 0) {
+        enrichedCategories = await Promise.all(
+          trending_categories.map(async (category) => await this.enrichCategory(category))
+        );
+      }
+
+      logger.info('Home page data aggregation complete', {
+        traceId,
+        spanId,
+        productsCount: enrichedProducts.length,
+        categoriesCount: enrichedCategories.length,
+      });
+
+      return {
+        trendingProducts: enrichedProducts,
+        trendingCategories: enrichedCategories,
+      };
+    } catch (error) {
+      logger.error('Error getting home page data', { error });
+      throw error;
+    }
+  }
+
+  /**
    * Get trending products with inventory and review data
    * OPTIMIZED: Single call to product service /storefront-data endpoint
    * Reduces service calls from 3-4 to 2 (storefront data + inventory)
