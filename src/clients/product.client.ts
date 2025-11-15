@@ -41,7 +41,7 @@ export class ProductClient extends DaprBaseClient {
   }
 
   /**
-   * Get combined storefront data (trending products + categories) in one call
+   * Get trending products and categories in one call
    * Optimized endpoint that reduces round trips to product service
    * Works with both Dapr and direct HTTP
    */
@@ -50,16 +50,8 @@ export class ProductClient extends DaprBaseClient {
     categoriesLimit: number = 5
   ): Promise<StorefrontData> {
     return this.get<StorefrontData>(
-      `/api/products/storefront-data?products_limit=${productsLimit}&categories_limit=${categoriesLimit}`
+      `/api/products/trending?products_limit=${productsLimit}&categories_limit=${categoriesLimit}`
     );
-  }
-
-  async getTrendingProducts(limit: number = 4): Promise<Product[]> {
-    return this.get<Product[]>(`/api/products/trending?limit=${limit}`);
-  }
-
-  async getTrendingCategories(limit: number = 5): Promise<TrendingCategory[]> {
-    return this.get<TrendingCategory[]>(`/api/products/trending-categories?limit=${limit}`);
   }
 
   async getProductsByCategory(category: string, limit?: number): Promise<Product[]> {

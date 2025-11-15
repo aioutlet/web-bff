@@ -10,23 +10,23 @@ import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import { asyncHandler } from '@middleware/asyncHandler.middleware';
 
 /**
- * Get home page data (trending products and categories combined)
+ * Get trending data (products and categories combined)
  */
-export const getHomeData = asyncHandler(
+export const getTrendingData = asyncHandler(
   async (req: RequestWithTraceContext, res: Response) => {
     const { traceId, spanId } = req;
     const productsLimit = parseInt(req.query.productsLimit as string) || 4;
     const categoriesLimit = parseInt(req.query.categoriesLimit as string) || 5;
 
-    logger.info('Fetching home page data', {
+    logger.info('Fetching trending data', {
       traceId,
       spanId,
       productsLimit,
       categoriesLimit,
     });
 
-    // Single call to product service via aggregator (which calls /storefront-data)
-    const homeData = await storefrontAggregator.getHomeData(
+    // Single call to product service via aggregator (which calls /trending)
+    const trendingData = await storefrontAggregator.getTrendingData(
       productsLimit,
       categoriesLimit,
       traceId,
@@ -35,53 +35,7 @@ export const getHomeData = asyncHandler(
 
     res.json({
       success: true,
-      data: homeData,
-    });
-  }
-);
-
-/**
- * Get trending products with inventory and reviews
- */
-export const getTrendingProducts = asyncHandler(
-  async (req: RequestWithTraceContext, res: Response) => {
-    const { traceId, spanId } = req;
-    const limit = parseInt(req.query.limit as string) || 4;
-
-    logger.info('Fetching trending products', {
-      traceId,
-      spanId,
-      limit,
-    });
-
-    const products = await storefrontAggregator.getTrendingProducts(limit, traceId, spanId);
-
-    res.json({
-      success: true,
-      data: products,
-    });
-  }
-);
-
-/**
- * Get trending categories with metadata
- */
-export const getTrendingCategories = asyncHandler(
-  async (req: RequestWithTraceContext, res: Response) => {
-    const { traceId, spanId } = req;
-    const limit = parseInt(req.query.limit as string) || 5;
-
-    logger.info('Fetching trending categories', {
-      traceId,
-      spanId,
-      limit,
-    });
-
-    const categories = await storefrontAggregator.getTrendingCategories(limit);
-
-    res.json({
-      success: true,
-      data: categories,
+      data: trendingData,
     });
   }
 );

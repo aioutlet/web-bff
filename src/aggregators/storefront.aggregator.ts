@@ -25,11 +25,11 @@ export interface EnrichedCategory extends TrendingCategory {
 
 export class StorefrontAggregator {
   /**
-   * Get home page data (trending products and categories) in a single call
-   * OPTIMIZED: Single call to product service /storefront-data endpoint
-   * Reduces service calls from 6+ to 2 (storefront data + inventory)
+   * Get trending data (products and categories) in a single call
+   * OPTIMIZED: Single call to product service /trending endpoint
+   * Reduces service calls from 6+ to 2 (trending data + inventory)
    */
-  async getHomeData(
+  async getTrendingData(
     productsLimit: number = 4,
     categoriesLimit: number = 5,
     traceId?: string,
@@ -39,14 +39,14 @@ export class StorefrontAggregator {
     trendingCategories: EnrichedCategory[];
   }> {
     try {
-      logger.info('Fetching home page data (single call optimization)', {
+      logger.info('Fetching trending data (single call optimization)', {
         traceId,
         spanId,
         productsLimit,
         categoriesLimit,
       });
 
-      // Single call to product service for both trending products and categories
+      // Single call to product service /trending endpoint for both products and categories
       const { trending_products, trending_categories } = await productClient.getStorefrontData(
         productsLimit,
         categoriesLimit
@@ -99,7 +99,7 @@ export class StorefrontAggregator {
         );
       }
 
-      logger.info('Home page data aggregation complete', {
+      logger.info('Trending data aggregation complete', {
         traceId,
         spanId,
         productsCount: enrichedProducts.length,
@@ -111,120 +111,7 @@ export class StorefrontAggregator {
         trendingCategories: enrichedCategories,
       };
     } catch (error) {
-      logger.error('Error getting home page data', { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Get trending products with inventory and review data
-   * OPTIMIZED: Single call to product service /storefront-data endpoint
-   * Reduces service calls from 3-4 to 2 (storefront data + inventory)
-   */
-  async getTrendingProducts(
-    limit: number = 4,
-    traceId?: string,
-    spanId?: string
-  ): Promise<EnrichedProduct[]> {
-    try {
-      logger.info('Fetching storefront data (trending products)', {
-        traceId,
-        spanId,
-        limit,
-      });
-
-      // Single call to product service for trending products
-      // Product service calculates trending scores using MongoDB aggregation
-      // Note: FastAPI requires minimum value of 1, so we pass 1 for categories_limit even though we only need products
-      const { trending_products } = await productClient.getStorefrontData(limit, 1);
-
-      if (!trending_products || trending_products.length === 0) {
-        logger.warn('No trending products returned', { traceId, spanId });
-        return [];
-      }
-
-      // Extract SKUs for inventory lookup
-      const skus = trending_products.map((p) => p.sku).filter((sku): sku is string => Boolean(sku));
-
-      // Fetch inventory data in parallel
-      let inventoryMap = new Map<string, InventoryItem>();
-      try {
-        const inventoryData = await inventoryClient.getInventoryBatch(skus);
-        inventoryData.forEach((item) => inventoryMap.set(item.sku, item));
-      } catch (error) {
-        logger.warn('Failed to fetch inventory data for trending products', {
-          error,
-          traceId,
-          spanId,
-        });
-      }
-
-      // Map to EnrichedProduct format
-      const enrichedProducts: EnrichedProduct[] = trending_products.map((product) => {
-        const inventory = product.sku ? inventoryMap.get(product.sku) : undefined;
-
-        return {
-          id: product.id,
-          name: product.name,
-          description: product.description || '',
-          price: product.price,
-          category: product.category || '',
-          sku: product.sku || '',
-          images: product.images,
-          isActive: product.isActive,
-          inventory: {
-            inStock: inventory ? inventory.quantityAvailable > 0 : false,
-            availableQuantity: inventory?.quantityAvailable || 0,
-          },
-          reviews: {
-            averageRating: (product as any).review_aggregates?.average_rating || 0,
-            reviewCount: (product as any).review_aggregates?.total_review_count || 0,
-          },
-        };
-      });
-
-      logger.info('Trending products aggregation complete', {
-        traceId,
-        spanId,
-        count: enrichedProducts.length,
-      });
-
-      return enrichedProducts;
-    } catch (error) {
-      logger.error('Error getting trending products', { error });
-      throw error;
-    }
-  }
-
-  /**
-   * Get trending categories with enriched display data
-   * OPTIMIZED: Single call to product service /storefront-data endpoint
-   */
-  async getTrendingCategories(limit: number = 5): Promise<EnrichedCategory[]> {
-    try {
-      logger.info('Fetching storefront data (trending categories)', { limit });
-
-      // Single call to product service for trending categories
-      // Note: FastAPI requires minimum value of 1, so we pass 1 for products_limit even though we only need categories
-      const { trending_categories } = await productClient.getStorefrontData(1, limit);
-
-      if (!trending_categories || trending_categories.length === 0) {
-        logger.warn('No trending categories returned');
-        return [];
-      }
-
-      // Enrich categories with display information
-      const enrichedCategories = await Promise.all(
-        trending_categories.map(async (category) => await this.enrichCategory(category))
-      );
-
-      logger.info('Trending categories aggregation complete', {
-        count: enrichedCategories.length,
-      });
-
-      return enrichedCategories;
-    } catch (error) {
-      logger.error('Error getting trending categories', { error });
+      logger.error('Error getting trending data', { error });
       throw error;
     }
   }
