@@ -79,7 +79,7 @@ export class ProductClient extends DaprBaseClient {
     headers?: Record<string, string>
   ): Promise<any> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/products/${queryString}`, headers);
+    return this.get<any>(`/api/products${queryString}`, headers);
   }
 
   async searchProducts(
