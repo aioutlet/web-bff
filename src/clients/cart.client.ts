@@ -7,6 +7,8 @@ interface CartItem {
   price: number;
   quantity: number;
   imageUrl?: string;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
 interface Cart {
@@ -23,6 +25,8 @@ interface AddItemRequest {
   price: number;
   quantity: number;
   imageUrl?: string;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
 /**
