@@ -26,11 +26,11 @@ export class InventoryClient extends DaprBaseClient {
   }
 
   async getInventory(sku: string): Promise<InventoryItem> {
-    return this.get<InventoryItem>(`/api/v1/inventory/${sku}`);
+    return this.get<InventoryItem>(`/api/inventory/${sku}`);
   }
 
   async getInventoryBatch(skus: string[]): Promise<InventoryItem[]> {
-    return this.post<InventoryItem[]>('/api/v1/inventory/bulk', { skus });
+    return this.post<InventoryItem[]>('/api/inventory/batch', { skus });
   }
 
   async getDashboardStats(headers?: Record<string, string>): Promise<InventoryStats> {
