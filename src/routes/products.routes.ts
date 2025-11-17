@@ -14,6 +14,7 @@ const router = Router();
 router.use(optionalAuth as any);
 
 // Product Routes
+router.get('/categories', productsController.getCategories as unknown as RequestHandler);
 router.get('/', productsController.getProducts as unknown as RequestHandler);
 router.get('/search', productsController.searchProducts as unknown as RequestHandler);
 router.get('/:id', productsController.getProductById as unknown as RequestHandler);

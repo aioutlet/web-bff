@@ -60,7 +60,7 @@ export class ProductClient extends DaprBaseClient {
   }
 
   async getCategories(): Promise<string[]> {
-    return this.get<string[]>('/api/categories');
+    return this.get<string[]>('/api/products/categories');
   }
 
   async getProductCount(department: string, category: string): Promise<number> {

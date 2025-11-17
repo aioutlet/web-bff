@@ -184,3 +184,25 @@ res.json({
   data: reviewData,
 });
 });
+
+/**
+ * GET /api/products/categories
+ * Get all product categories
+ * Direct call to product service - no aggregation needed
+ */
+export const getCategories = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+const { traceId, spanId } = req;
+
+logger.info('Fetching all product categories', {
+  traceId,
+  spanId,
+});
+
+// Direct call to product service
+const categories = await productClient.getCategories();
+
+res.json({
+  success: true,
+  data: categories,
+});
+});
