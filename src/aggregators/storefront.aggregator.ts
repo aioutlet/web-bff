@@ -138,20 +138,20 @@ export class StorefrontAggregator {
       string,
       { department: string; categoryName: string; path: string }
     > = {
-      Clothing: { department: 'Women', categoryName: 'Clothing', path: '/women/clothing' },
-      Accessories: { department: 'Women', categoryName: 'Accessories', path: '/women/accessories' },
-      Apparel: { department: 'Sports', categoryName: 'Apparel', path: '/sports/apparel' },
-      Footwear: { department: 'Kids', categoryName: 'Footwear', path: '/kids/footwear' },
-      Mobile: { department: 'Electronics', categoryName: 'Mobile', path: '/electronics/mobile' },
-      Audio: { department: 'Electronics', categoryName: 'Audio', path: '/electronics/audio' },
+      Clothing: { department: 'Women', categoryName: 'Clothing', path: '/products?department=women&category=clothing' },
+      Accessories: { department: 'Women', categoryName: 'Accessories', path: '/products?department=women&category=accessories' },
+      Apparel: { department: 'Sports', categoryName: 'Apparel', path: '/products?department=sports&category=apparel' },
+      Footwear: { department: 'Kids', categoryName: 'Footwear', path: '/products?department=kids&category=footwear' },
+      Mobile: { department: 'Electronics', categoryName: 'Mobile', path: '/products?department=electronics&category=mobile' },
+      Audio: { department: 'Electronics', categoryName: 'Audio', path: '/products?department=electronics&category=audio' },
       Computers: {
         department: 'Electronics',
         categoryName: 'Computers',
-        path: '/electronics/computers',
+        path: '/products?department=electronics&category=computers',
       },
-      Gaming: { department: 'Electronics', categoryName: 'Gaming', path: '/electronics/gaming' },
-      Fiction: { department: 'Books', categoryName: 'Fiction', path: '/books/fiction' },
-      Nonfiction: { department: 'Books', categoryName: 'Nonfiction', path: '/books/nonfiction' },
+      Gaming: { department: 'Electronics', categoryName: 'Gaming', path: '/products?department=electronics&category=gaming' },
+      Fiction: { department: 'Books', categoryName: 'Fiction', path: '/products?department=books&category=fiction' },
+      Nonfiction: { department: 'Books', categoryName: 'Nonfiction', path: '/products?department=books&category=nonfiction' },
     };
 
     // Map category names to display names and images
