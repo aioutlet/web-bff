@@ -6,6 +6,7 @@
 import { Response } from 'express';
 import { asyncHandler } from '@middleware/asyncHandler.middleware';
 import { productClient } from '@clients/product.client';
+import { inventoryClient } from '@clients/inventory.client';
 import logger from '../core/logger';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import { getProductReviews } from '@aggregators/product.aggregator';
@@ -58,6 +59,73 @@ params.limit = limit as string;
 const response = await productClient.getProducts(params, {
   'X-Correlation-Id': req.correlationId || 'no-correlation',
 });
+
+// Enrich products with inventory data
+const products = response.products || [];
+logger.info('Enriching products with inventory data', {
+  traceId,
+  spanId,
+  productCount: products.length,
+});
+
+if (products.length > 0) {
+  try {
+    // Extract SKUs from products
+    const skus = products.map((p: any) => p.sku).filter((sku: string) => sku);
+    
+    logger.info('Fetching inventory for SKUs', {
+      traceId,
+      spanId,
+      skuCount: skus.length,
+      skus: skus.slice(0, 5), // Log first 5 SKUs for debugging
+    });
+    
+    if (skus.length > 0) {
+      // Fetch inventory data in batch
+      const inventoryData = await inventoryClient.getInventoryBatch(skus);
+      
+      logger.info('Received inventory data', {
+        traceId,
+        spanId,
+        inventoryItemCount: inventoryData.length,
+      });
+      
+      // Create a map for quick lookup
+      const inventoryMap = new Map(
+        inventoryData.map(item => [item.sku, item])
+      );
+      
+      // Enrich each product with inventory data
+      products.forEach((product: any) => {
+        const inventory = inventoryMap.get(product.sku);
+        if (inventory) {
+          product.inventory = {
+            inStock: inventory.quantityAvailable > 0,
+            availableQuantity: inventory.quantityAvailable,
+            status: inventory.status,
+          };
+        } else {
+          // Product not in inventory - mark as out of stock
+          product.inventory = {
+            inStock: false,
+            availableQuantity: 0,
+            status: 'out_of_stock',
+          };
+        }
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to enrich products with inventory data', {
+      traceId,
+      spanId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Continue without inventory data - don't fail the request
+  }
+} else {
+  logger.info('No products to enrich with inventory', { traceId, spanId });
+}
 
 res.json({
   success: true,
@@ -120,6 +188,66 @@ const response = await productClient.searchProducts(params, {
   'X-Correlation-Id': req.correlationId || 'no-correlation',
 });
 
+// Enrich products with inventory data
+const products = response.products || [];
+logger.info('Enriching search results with inventory data', {
+  traceId,
+  spanId,
+  productCount: products.length,
+});
+
+if (products.length > 0) {
+  try {
+    const skus = products.map((p: any) => p.sku).filter((sku: string) => sku);
+    
+    logger.info('Fetching inventory for search SKUs', {
+      traceId,
+      spanId,
+      skuCount: skus.length,
+      skus: skus.slice(0, 5),
+    });
+    
+    if (skus.length > 0) {
+      const inventoryData = await inventoryClient.getInventoryBatch(skus);
+      
+      logger.info('Received inventory data for search', {
+        traceId,
+        spanId,
+        inventoryItemCount: inventoryData.length,
+      });
+      const inventoryMap = new Map(
+        inventoryData.map(item => [item.sku, item])
+      );
+      
+      products.forEach((product: any) => {
+        const inventory = inventoryMap.get(product.sku);
+        if (inventory) {
+          product.inventory = {
+            inStock: inventory.quantityAvailable > 0,
+            availableQuantity: inventory.quantityAvailable,
+            status: inventory.status,
+          };
+        } else {
+          product.inventory = {
+            inStock: false,
+            availableQuantity: 0,
+            status: 'out_of_stock',
+          };
+        }
+      });
+    }
+  } catch (error) {
+    logger.error('Failed to enrich search results with inventory data', {
+      traceId,
+      spanId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+  }
+} else {
+  logger.info('No search results to enrich', { traceId, spanId });
+}
+
 // Products already include review_aggregates
 return res.json({
   success: true,
@@ -144,6 +272,57 @@ logger.info('Fetching product by ID', {
 const product = await productClient.getProductDetailsById(id, {
   'X-Correlation-Id': req.correlationId || 'no-correlation',
 });
+
+// Enrich with inventory data
+if (product && product.sku) {
+  logger.info('Fetching inventory for product detail', {
+    traceId,
+    spanId,
+    productId: id,
+    sku: product.sku,
+  });
+  
+  try {
+    const inventoryData = await inventoryClient.getInventoryBatch([product.sku]);
+    
+    logger.info('Received inventory for product detail', {
+      traceId,
+      spanId,
+      productId: id,
+      hasInventory: inventoryData.length > 0,
+    });
+    if (inventoryData.length > 0) {
+      const inventory = inventoryData[0];
+      product.inventory = {
+        inStock: inventory.quantityAvailable > 0,
+        availableQuantity: inventory.quantityAvailable,
+        status: inventory.status,
+      };
+    } else {
+      product.inventory = {
+        inStock: false,
+        availableQuantity: 0,
+        status: 'out_of_stock',
+      };
+    }
+  } catch (error) {
+    logger.error('Failed to enrich product detail with inventory data', {
+      traceId,
+      spanId,
+      productId: id,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    // Continue without inventory data
+  }
+} else {
+  logger.info('Product has no SKU, skipping inventory enrichment', {
+    traceId,
+    spanId,
+    productId: id,
+    hasSku: !!(product && product.sku),
+  });
+}
 
 res.json({
   success: true,

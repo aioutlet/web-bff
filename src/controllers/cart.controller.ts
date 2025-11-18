@@ -76,7 +76,10 @@ const headers: Record<string, string> = {
   'x-correlation-id': req.correlationId || '',
 };
 
-const cart = await cartClient.getCart(headers);
+const response = await cartClient.getCart(headers);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.json({
   success: true,
@@ -105,7 +108,10 @@ const headers: Record<string, string> = {
   'x-correlation-id': req.correlationId || '',
 };
 
-const cart = await cartClient.addItem(req.body, headers);
+const response = await cartClient.addItem(req.body, headers);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.status(200).json({
   success: true,
@@ -138,7 +144,10 @@ const headers: Record<string, string> = {
   'x-correlation-id': req.correlationId || '',
 };
 
-const cart = await cartClient.updateItem(productId, quantity, headers);
+const response = await cartClient.updateItem(productId, quantity, headers);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.json({
   success: true,
@@ -169,7 +178,10 @@ const headers: Record<string, string> = {
   'x-correlation-id': req.correlationId || '',
 };
 
-const cart = await cartClient.removeItem(productId, headers);
+const response = await cartClient.removeItem(productId, headers);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.json({
   success: true,
@@ -236,7 +248,10 @@ const headers: Record<string, string> = {
   'x-correlation-id': req.correlationId || '',
 };
 
-const cart = await cartClient.transferCart(guestId, headers);
+const response = await cartClient.transferCart(guestId, headers);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.json({
   success: true,
@@ -263,7 +278,10 @@ logger.info('Fetching guest cart', {
   guestId,
 });
 
-const cart = await cartClient.getGuestCart(guestId);
+const response = await cartClient.getGuestCart(guestId);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.json({
   success: true,
@@ -286,7 +304,10 @@ logger.info('Adding item to guest cart', {
   productId: req.body.productId,
 });
 
-const cart = await cartClient.addGuestItem(guestId, req.body);
+const response = await cartClient.addGuestItem(guestId, req.body);
+
+// Extract actual cart data from cart service response
+const cart = (response as any).data || response;
 
 res.status(200).json({
   success: true,
@@ -314,7 +335,10 @@ export const updateGuestItem = async (
       quantity,
     });
 
-    const cart = await cartClient.updateGuestItem(guestId, productId, quantity);
+    const response = await cartClient.updateGuestItem(guestId, productId, quantity);
+
+    // Extract actual cart data from cart service response
+    const cart = (response as any).data || response;
 
     res.json({
       success: true,
@@ -354,7 +378,10 @@ export const removeGuestItem = async (
       productId,
     });
 
-    const cart = await cartClient.removeGuestItem(guestId, productId);
+    const response = await cartClient.removeGuestItem(guestId, productId);
+
+    // Extract actual cart data from cart service response
+    const cart = (response as any).data || response;
 
     res.json({
       success: true,
