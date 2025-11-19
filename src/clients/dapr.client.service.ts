@@ -37,6 +37,11 @@ class DaprClientService {
   ): Promise<T> {
     try {
       const client = this.ensureClient();
+      console.log(`[Dapr] Invoking ${appId}/${methodName}`, {
+        httpMethod,
+        headers: metadata?.headers,
+        hasData: !!data,
+      });
       const response = await client.invoker.invoke(appId, methodName, httpMethod, data, metadata);
       return response as T;
     } catch (error: any) {

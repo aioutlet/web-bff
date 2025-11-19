@@ -38,7 +38,7 @@ async function getJwtConfig(): Promise<{ secret: string; algorithm: string }> {
     // Get JWT secret from auth service via Dapr
     const secretStoreResponse = await daprClient.invokeService(
       config.services.auth,
-      'api/config/jwt',
+      'api/auth/config/jwt',
       HttpMethod.GET,
       null,
       {}

@@ -243,10 +243,14 @@ logger.info('Transferring guest cart to user', {
   guestId,
 });
 
+// Dapr service invocation metadata headers must be lowercase
 const headers: Record<string, string> = {
-  authorization: req.headers.authorization || '',
+  'x-user-id': auth.userId,
+  'authorization': req.headers.authorization || '',
   'x-correlation-id': req.correlationId || '',
 };
+
+logger.debug('Cart transfer headers', { headers });
 
 const response = await cartClient.transferCart(guestId, headers);
 
