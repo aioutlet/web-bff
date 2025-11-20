@@ -36,14 +36,36 @@ class DaprClientService {
     metadata?: InvokeMetadata
   ): Promise<T> {
     try {
-      const client = this.ensureClient();
-      console.log(`[Dapr] Invoking ${appId}/${methodName}`, {
-        httpMethod,
-        headers: metadata?.headers,
+      console.log(`[Dapr Debug] Received metadata:`, JSON.stringify(metadata));
+      
+      const cleanMethodName = methodName.startsWith('/') ? methodName.slice(1) : methodName;
+      const daprUrl = `http://${config.dapr.host}:${config.dapr.httpPort}/v1.0/invoke/${appId}/method/${cleanMethodName}`;
+      
+      const fetchHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...metadata?.headers,
+      };
+      
+      console.log(`[Dapr] Making HTTP call with headers:`, {
+        url: daprUrl,
+        method: httpMethod.toUpperCase(),
+        headers: fetchHeaders,
         hasData: !!data,
       });
-      const response = await client.invoker.invoke(appId, methodName, httpMethod, data, metadata);
-      return response as T;
+      
+      const response = await fetch(daprUrl, {
+        method: httpMethod.toUpperCase(),
+        headers: fetchHeaders,
+        body: data ? JSON.stringify(data) : undefined,
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`[Dapr] HTTP ${response.status} from ${appId}:`, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      return await response.json() as T;
     } catch (error: any) {
       console.error(`[Dapr] Service invocation failed: ${appId}/${methodName}`, {
         error: error.message,

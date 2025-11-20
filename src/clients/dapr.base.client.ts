@@ -16,6 +16,7 @@ export class DaprBaseClient {
 
   /**
    * Make a request to another service via Dapr
+   * Updated: 2025-11-19 17:13
    */
   private async daprRequest<T>(
     method: string,
@@ -35,17 +36,26 @@ export class DaprBaseClient {
       DELETE: HttpMethod.DELETE,
     };
 
+    console.log(`[BaseClient ${new Date().toISOString()}] Method: ${method}, Headers received:`, headers);
+
     logger.debug(`Dapr ${method} request to ${this.serviceName}`, {
       url,
       correlationId: headers?.['x-correlation-id'],
+      headers: headers || 'undefined',
     });
+
+    // Only pass metadata if headers exist and are not empty
+    const metadata = headers && Object.keys(headers).length > 0 ? { headers } : undefined;
+    
+    console.log(`[BaseClient Debug] Headers:`, headers);
+    console.log(`[BaseClient Debug] Metadata:`, JSON.stringify(metadata));
 
     const response = await daprClient.invokeService<T>(
       this.appId,
       url,
       methodMap[method],
       method !== 'GET' && method !== 'DELETE' ? data : null,
-      { headers }
+      metadata
     );
 
     logger.debug(`Dapr response from ${this.serviceName}`, {

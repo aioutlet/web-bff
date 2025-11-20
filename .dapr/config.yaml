@@ -6,6 +6,8 @@ spec:
   features:
     - name: SchedulerReminders
       enabled: false
+    - name: Actor.TypeMetadata
+      enabled: false
   tracing:
     samplingRate: '1'
     otel:
@@ -13,4 +15,6 @@ spec:
       isSecure: false
       protocol: 'http'
   mtls:
+    enabled: false
+  actors:
     enabled: false

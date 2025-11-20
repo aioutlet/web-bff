@@ -31,10 +31,12 @@ interface AddItemRequest {
 
 /**
  * Client for cart service operations
+ * Last updated: 2025-11-19 17:15 - Force recompile
  */
 class CartClient extends DaprBaseClient {
   constructor() {
     super(config.services.cart, 'cart-service');
+    console.log('[CartClient] Initialized with config:', config.services.cart);
   }
 
   /**
@@ -80,7 +82,12 @@ class CartClient extends DaprBaseClient {
    * Transfer guest cart to authenticated user
    */
   async transferCart(guestId: string, headers: Record<string, string>): Promise<Cart> {
-    return this.post<Cart>('/api/v1/cart/transfer', { guestId }, headers);
+    console.log('[CartClient 2025-11-19 17:15] transferCart called');
+    console.log('[CartClient] guestId:', guestId);
+    console.log('[CartClient] headers:', JSON.stringify(headers));
+    const result = await this.post<Cart>('/api/v1/cart/transfer', { guestId }, headers);
+    console.log('[CartClient] Transfer result:', result);
+    return result;
   }
 
   /**

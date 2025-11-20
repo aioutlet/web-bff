@@ -86,10 +86,12 @@ export const requireAuth = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  console.log(`[MIDDLEWARE] requireAuth called for ${req.method} ${req.path} at ${new Date().toISOString()}`);
   const { traceId, spanId } = req;
 
   try {
     const token = extractToken(req);
+    console.log(`[MIDDLEWARE] Token extracted: ${token ? token.substring(0, 20) + '...' : 'NONE'}`);
 
     if (!token) {
       logger.warn('Authentication required: No token provided', { traceId, spanId });
@@ -138,6 +140,8 @@ export const requireAuth = async (
       emailVerified: decoded.emailVerified || false,
     };
 
+    console.log(`[MIDDLEWARE] User authenticated: ${req.user.id}, calling next()`);
+    
     logger.info('User authenticated successfully', {
       traceId,
       spanId,
