@@ -79,8 +79,8 @@ const orderData = {
 
 // Forward JWT token to order service
 const headers: Record<string, string> = {
-  authorization: req.headers.authorization || '',
-  'x-correlation-id': req.correlationId || '',
+  Authorization: req.headers.authorization || '',
+  'X-Correlation-ID': req.correlationId || '',
 };
 
 const order = await orderClient.createOrder(orderData, headers);
