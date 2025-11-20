@@ -75,7 +75,7 @@ export class OrderClient extends DaprBaseClient {
     params?: any
   ): Promise<PagedResponse<Order>> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<PagedResponse<Order>>(`/api/orders/paged${queryString}`, headers);
+    return this.get<PagedResponse<Order>>(`/api/admin/orders/paged${queryString}`, headers);
   }
 
   async getOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {

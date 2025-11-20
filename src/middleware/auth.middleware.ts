@@ -24,12 +24,12 @@ export interface RequestWithAuth extends RequestWithTraceContext {
 }
 
 // Cache JWT config to avoid repeated Dapr calls
-let jwtConfigCache: { secret: string; algorithm: string } | null = null;
+let jwtConfigCache: { secret: string; algorithm: string; issuer: string; audience: string } | null = null;
 
 /**
  * Get JWT configuration from auth service
  */
-async function getJwtConfig(): Promise<{ secret: string; algorithm: string }> {
+async function getJwtConfig(): Promise<{ secret: string; algorithm: string; issuer: string; audience: string }> {
   if (jwtConfigCache) {
     return jwtConfigCache;
   }
@@ -51,6 +51,8 @@ async function getJwtConfig(): Promise<{ secret: string; algorithm: string }> {
     jwtConfigCache = {
       secret: secretStoreResponse.secret,
       algorithm: secretStoreResponse.algorithm || 'HS256',
+      issuer: secretStoreResponse.issuer || 'auth-service',
+      audience: secretStoreResponse.audience || 'aioutlet-platform',
     };
 
     return jwtConfigCache;
@@ -113,6 +115,8 @@ export const requireAuth = async (
     // Verify token
     const decoded = jwt.verify(token, jwtConfig.secret, {
       algorithms: [jwtConfig.algorithm as jwt.Algorithm],
+      issuer: jwtConfig.issuer,
+      audience: jwtConfig.audience
     }) as any;
 
     // Validate standard claims
@@ -237,6 +241,8 @@ export const optionalAuth = async (
     // Verify token
     const decoded = jwt.verify(token, jwtConfig.secret, {
       algorithms: [jwtConfig.algorithm as jwt.Algorithm],
+      issuer: jwtConfig.issuer,
+      audience: jwtConfig.audience
     }) as any;
 
     // Attach user information if valid

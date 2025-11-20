@@ -13,7 +13,7 @@ Write-Host "Dapr gRPC endpoint: localhost:50080" -ForegroundColor Cyan
 Write-Host ""
 
 dapr run `
-  --app-id web-bff-service `
+  --app-id web-bff `
   --app-port 8080 `
   --dapr-http-port 3513 `
   --dapr-grpc-port 50013 `

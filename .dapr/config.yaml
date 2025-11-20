@@ -8,6 +8,8 @@ spec:
       enabled: false
     - name: Actor.TypeMetadata
       enabled: false
+  scheduler:
+    enabled: false
   tracing:
     samplingRate: '1'
     otel:
