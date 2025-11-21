@@ -78,10 +78,15 @@ const orderData = {
 };
 
 // Forward JWT token to order service
-const headers: Record<string, string> = {
-  Authorization: req.headers.authorization || '',
-  'X-Correlation-ID': req.correlationId || '',
-};
+const headers: Record<string, string> = {};
+if (req.headers.authorization) {
+  headers.Authorization = req.headers.authorization;
+}
+if (req.correlationId) {
+  headers['X-Correlation-ID'] = req.correlationId;
+}
+
+console.log('[OrderController] Forwarding headers to order-service:', headers);
 
 const order = await orderClient.createOrder(orderData, headers);
 
@@ -111,10 +116,13 @@ logger.info('Fetching user orders', {
   customerId: auth.userId,
 });
 
-const headers: Record<string, string> = {
-  authorization: req.headers.authorization || '',
-  'x-correlation-id': req.correlationId || '',
-};
+const headers: Record<string, string> = {};
+if (req.headers.authorization) {
+  headers.Authorization = req.headers.authorization;
+}
+if (req.correlationId) {
+  headers['X-Correlation-ID'] = req.correlationId;
+}
 
 const orders = await orderClient.getMyOrders(auth.userId, headers);
 
@@ -144,10 +152,13 @@ export const getMyOrdersPaged = async (
       pageSize: req.query.pageSize,
     });
 
-    const headers: Record<string, string> = {
-      authorization: req.headers.authorization || '',
-      'x-correlation-id': req.correlationId || '',
-    };
+    const headers: Record<string, string> = {};
+    if (req.headers.authorization) {
+      headers.Authorization = req.headers.authorization;
+    }
+    if (req.correlationId) {
+      headers['X-Correlation-ID'] = req.correlationId;
+    }
 
     const params = {
       page: req.query.page || '1',
@@ -193,10 +204,13 @@ logger.info('Fetching order', {
   orderId: id,
 });
 
-const headers: Record<string, string> = {
-  authorization: req.headers.authorization || '',
-  'x-correlation-id': req.correlationId || '',
-};
+const headers: Record<string, string> = {};
+if (req.headers.authorization) {
+  headers.Authorization = req.headers.authorization;
+}
+if (req.correlationId) {
+  headers['X-Correlation-ID'] = req.correlationId;
+}
 
 const order = await orderClient.getOrderById(id, headers);
 
