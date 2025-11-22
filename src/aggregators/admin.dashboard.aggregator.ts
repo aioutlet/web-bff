@@ -218,9 +218,11 @@ export class AdminDashboardAggregator {
         if (orderStatsData.recentOrders && Array.isArray(orderStatsData.recentOrders)) {
           aggregatedStats.recentOrders = orderStatsData.recentOrders.map((order: any) => ({
             id: order.id,
+            orderNumber: order.orderNumber,
             customer: order.customerName || order.customerId,
             total: order.totalAmount,
             status: order.status.toLowerCase(), // Already a string from backend
+            itemCount: order.itemCount || 0,
             createdAt: order.createdAt,
           }));
         }

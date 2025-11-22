@@ -71,10 +71,45 @@ logger.info('Creating order', {
   customerId: auth.userId,
 });
 
-// Set customer ID from JWT token
+// Fetch user profile to capture customer information snapshot
+let customerName = '';
+let customerEmail = '';
+let customerPhone = '';
+
+try {
+  const { userClient } = await import('../clients/user.client');
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.replace('Bearer ', '');
+  
+  if (token) {
+    const userProfile = await userClient.getProfile(token);
+    customerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
+    customerEmail = userProfile.email || '';
+    customerPhone = userProfile.phoneNumber || '';
+    
+    logger.info('Fetched user profile for order', {
+      traceId,
+      spanId,
+      customerId: auth.userId,
+      customerName,
+      customerPhone,
+    });
+  }
+} catch (error: any) {
+  logger.warn('Failed to fetch user profile, using JWT data only', {
+    traceId,
+    spanId,
+    error: error.message,
+  });
+}
+
+// Set customer information from JWT token and user profile
 const orderData = {
   ...req.body,
   customerId: auth.userId,
+  customerName,
+  customerEmail,
+  customerPhone,
 };
 
 // Forward JWT token to order service

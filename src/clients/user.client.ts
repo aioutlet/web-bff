@@ -6,7 +6,7 @@ export interface UserProfile {
   email: string;
   firstName: string;
   lastName: string;
-  phone?: string;
+  phoneNumber?: string;
   dateOfBirth?: string;
   createdAt: string;
   updatedAt: string;
@@ -15,7 +15,7 @@ export interface UserProfile {
 export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
-  phone?: string;
+  phoneNumber?: string;
   dateOfBirth?: string;
 }
 
