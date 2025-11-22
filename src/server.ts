@@ -17,10 +17,7 @@ async function startServer() {
     const HOST = config.host;
 
     app.listen(PORT, HOST, () => {
-      logger.info(`Web BFF running on ${HOST}:${PORT} in ${config.env} mode`, {
-        service: 'web-bff',
-        version: '1.0.0',
-      });
+      logger.info(`Web BFF running on ${HOST}:${PORT} in ${config.env} mode`);
     });
 
     const gracefulShutdown = (signal: string) => {

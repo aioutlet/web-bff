@@ -36,7 +36,6 @@ interface AddItemRequest {
 class CartClient extends DaprBaseClient {
   constructor() {
     super(config.services.cart, 'cart-service');
-    console.log('[CartClient] Initialized with config:', config.services.cart);
   }
 
   /**

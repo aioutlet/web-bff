@@ -78,8 +78,14 @@ export class OrderClient extends DaprBaseClient {
     return this.get<PagedResponse<Order>>(`/api/admin/orders/paged${queryString}`, headers);
   }
 
-  async getOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
+  async getAdminOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
+    // Admin endpoint - admins can view any order
     return this.get<Order>(`/api/admin/orders/${orderId}`, headers);
+  }
+
+  async getOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
+    // Customer endpoint - customers can view their own orders, admins can view all
+    return this.get<Order>(`/api/orders/${orderId}`, headers);
   }
 
   async updateOrderStatus(

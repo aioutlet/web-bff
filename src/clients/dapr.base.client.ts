@@ -7,11 +7,7 @@ export class DaprBaseClient {
   constructor(appId: string, serviceName: string) {
     this.appId = appId;
     this.serviceName = serviceName;
-
-    logger.info(`[DaprBaseClient] Initialized for ${serviceName}`, {
-      appId,
-      serviceName,
-    });
+    logger.info(`[DaprBaseClient] Initialized for ${serviceName} with app Id ${appId}`);    
   }
 
   /**
@@ -46,9 +42,8 @@ export class DaprBaseClient {
 
     // Only pass metadata if headers exist and are not empty
     const metadata = headers && Object.keys(headers).length > 0 ? { headers } : undefined;
-    
-    console.log(`[BaseClient Debug] Headers:`, headers);
-    console.log(`[BaseClient Debug] Metadata:`, JSON.stringify(metadata));
+    // console.log(`[BaseClient Debug] Headers:`, headers);
+    // console.log(`[BaseClient Debug] Metadata:`, JSON.stringify(metadata));
 
     const response = await daprClient.invokeService<T>(
       this.appId,

@@ -4,7 +4,9 @@ const { combine, timestamp, printf, colorize, errors } = winston.format;
 
 // Console format for development
 const consoleFormat = printf(({ level, message, timestamp, traceId, spanId, ...metadata }: any) => {
-  let msg = `${timestamp} [${level}]`;
+  // Remove color codes from level for uppercase conversion
+  const cleanLevel = level.replace(/\u001b\[\d+m/g, '');
+  let msg = `${timestamp} [${cleanLevel.toUpperCase()}]`;
 
   // W3C Trace Context
   if (traceId && spanId) {
@@ -37,7 +39,7 @@ const jsonFormat = printf(({ level, message, timestamp, traceId, spanId, ...meta
 const logFormat =
   process.env.NODE_ENV === 'production'
     ? combine(timestamp(), errors({ stack: true }), jsonFormat)
-    : combine(timestamp(), errors({ stack: true }), colorize(), consoleFormat);
+    : combine(timestamp(), colorize({ level: true }), errors({ stack: true }), consoleFormat);
 
 // Create logger instance
 const logger = winston.createLogger({

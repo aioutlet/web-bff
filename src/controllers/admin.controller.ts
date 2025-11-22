@@ -403,7 +403,7 @@ export const getOrderById = asyncHandler(async (req: RequestWithTraceContext, re
   };
 
   const { orderClient } = await import('../clients/order.client');
-  const order = await orderClient.getOrderById(id, authHeaders);
+  const order = await orderClient.getAdminOrderById(id, authHeaders);
 
   res.json({
     success: true,
