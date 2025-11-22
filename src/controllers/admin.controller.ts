@@ -361,8 +361,8 @@ export const getAllOrders = asyncHandler(async (req: RequestWithTraceContext, re
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
-  const { orderClient } = await import('../clients/order.client');
-  const orders = await orderClient.getAllOrders(authHeaders);
+  const { adminClient } = await import('../clients/admin.client');
+  const orders = await adminClient.getAllOrders(authHeaders);
 
   res.json({
     success: true,
@@ -378,8 +378,8 @@ export const getOrdersPaged = asyncHandler(async (req: RequestWithTraceContext, 
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
-  const { orderClient } = await import('../clients/order.client');
-  const orders = await orderClient.getOrdersPaged(authHeaders, req.query);
+  const { adminClient } = await import('../clients/admin.client');
+  const orders = await adminClient.getOrdersPaged(authHeaders, req.query);
 
   res.json({
     success: true,
@@ -402,8 +402,8 @@ export const getOrderById = asyncHandler(async (req: RequestWithTraceContext, re
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
-  const { orderClient } = await import('../clients/order.client');
-  const order = await orderClient.getAdminOrderById(id, authHeaders);
+  const { adminClient } = await import('../clients/admin.client');
+  const order = await adminClient.getOrderById(id, authHeaders);
 
   res.json({
     success: true,
@@ -421,8 +421,8 @@ export const updateOrderStatus = asyncHandler(
       traceparent: `00-${traceId}-${spanId}-01`,
     };
 
-    const { orderClient } = await import('../clients/order.client');
-    const order = await orderClient.updateOrderStatus(id, req.body, authHeaders);
+    const { adminClient } = await import('../clients/admin.client');
+    const order = await adminClient.updateOrderStatus(id, req.body, authHeaders);
 
     res.json({
       success: true,
@@ -440,8 +440,8 @@ export const deleteOrder = asyncHandler(async (req: RequestWithTraceContext, res
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
-  const { orderClient } = await import('../clients/order.client');
-  await orderClient.deleteOrder(id, authHeaders);
+  const { adminClient } = await import('../clients/admin.client');
+  await adminClient.deleteOrder(id, authHeaders);
 
   res.status(204).send();
 });

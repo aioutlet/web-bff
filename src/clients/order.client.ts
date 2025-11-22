@@ -65,34 +65,21 @@ export class OrderClient extends DaprBaseClient {
     super(config.services.order, 'order-service');
   }
 
-  // Admin methods
+  // Admin methods (call order-service admin endpoints)
   async getAllOrders(headers: Record<string, string>): Promise<Order[]> {
-    return this.get<Order[]>('/api/orders', headers);
+    return this.get<Order[]>('/api/admin/orders', headers);
   }
 
-  async getOrdersPaged(
-    headers: Record<string, string>,
-    params?: any
-  ): Promise<PagedResponse<Order>> {
+  async getOrdersPaged(headers: Record<string, string>, params?: any): Promise<PagedResponse<Order>> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.get<PagedResponse<Order>>(`/api/admin/orders/paged${queryString}`, headers);
   }
 
   async getAdminOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
-    // Admin endpoint - admins can view any order
     return this.get<Order>(`/api/admin/orders/${orderId}`, headers);
   }
 
-  async getOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
-    // Customer endpoint - customers can view their own orders, admins can view all
-    return this.get<Order>(`/api/orders/${orderId}`, headers);
-  }
-
-  async updateOrderStatus(
-    orderId: string,
-    data: any,
-    headers: Record<string, string>
-  ): Promise<Order> {
+  async updateOrderStatus(orderId: string, data: any, headers: Record<string, string>): Promise<Order> {
     return this.put<Order>(`/api/admin/orders/${orderId}/status`, data, headers);
   }
 
@@ -100,7 +87,24 @@ export class OrderClient extends DaprBaseClient {
     return this.delete<void>(`/api/admin/orders/${orderId}`, headers);
   }
 
+  async getDashboardStats(
+    headers: Record<string, string>,
+    options?: { includeRecent?: boolean; recentLimit?: number }
+  ): Promise<any> {
+    const params = new URLSearchParams();
+    if (options?.includeRecent) params.append('includeRecent', 'true');
+    if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
+
+    const queryString = params.toString();
+    const endpoint = queryString ? `/api/admin/orders/stats?${queryString}` : '/api/admin/orders/stats';
+    return this.get<any>(endpoint, headers);
+  }
+
   // Customer methods
+  async getOrderById(orderId: string, headers: Record<string, string>): Promise<Order> {
+    // Customer endpoint - customers can view their own orders
+    return this.get<Order>(`/api/orders/${orderId}`, headers);
+  }
   async createOrder(
     orderData: CreateOrderRequest,
     headers: Record<string, string>
@@ -122,31 +126,6 @@ export class OrderClient extends DaprBaseClient {
       `/api/orders/customer/${customerId}/paged${queryString}`,
       headers
     );
-  }
-
-  /**
-   * Get comprehensive dashboard statistics for orders
-   * This replaces multiple endpoints with a single optimized call
-   */
-  async getDashboardStats(
-    headers: Record<string, string>,
-    options?: {
-      includeRecent?: boolean;
-      recentLimit?: number;
-      analyticsPeriod?: string;
-    }
-  ): Promise<any> {
-    const params = new URLSearchParams();
-    if (options?.includeRecent) params.append('includeRecent', 'true');
-    if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
-    if (options?.analyticsPeriod) params.append('period', options.analyticsPeriod);
-
-    const queryString = params.toString();
-    const endpoint = queryString
-      ? `/api/admin/orders/stats?${queryString}`
-      : '/api/admin/orders/stats';
-
-    return this.get<any>(endpoint, headers);
   }
 }
 

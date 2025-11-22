@@ -5,7 +5,7 @@
 
 import logger from '../core/logger';
 import { userClient } from '../clients/user.client';
-import { orderClient } from '../clients/order.client';
+import { adminClient } from '../clients/admin.client';
 import { productClient } from '../clients/product.client';
 import { reviewClient } from '../clients/review.client';
 import { inventoryClient } from '../clients/inventory.client';
@@ -89,7 +89,7 @@ export class AdminDashboardAggregator {
     const [userStats, orderStats, productStats, inventoryStats, reviewStats] =
       await Promise.allSettled([
         userClient.getDashboardStats(headers, { includeRecent, recentLimit }),
-        orderClient.getDashboardStats(headers, { includeRecent, recentLimit }),
+        adminClient.getDashboardStats(headers, { includeRecent, recentLimit }),
         productClient.getDashboardStats(headers, { includeRecent: false }),
         inventoryClient.getDashboardStats(headers),
         reviewClient.getDashboardStats(headers, { includeRecent: false }),
