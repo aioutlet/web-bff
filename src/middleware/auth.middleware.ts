@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import { HttpMethod } from '@dapr/dapr';
 import { RequestWithTraceContext } from './traceContext.middleware';
 import logger from '../core/logger';
-import { daprClient } from '@clients/dapr.client.service';
+import { daprClient } from '../core/daprClient';
 import config from '@/core/config';
 
 // Extend request interface to include user information
@@ -88,12 +88,12 @@ export const requireAuth = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  console.log(`[MIDDLEWARE] requireAuth called for ${req.method} ${req.path} at ${new Date().toISOString()}`);
+  // console.log(`[MIDDLEWARE] requireAuth called for ${req.method} ${req.path} at ${new Date().toISOString()}`);
   const { traceId, spanId } = req;
 
   try {
     const token = extractToken(req);
-    console.log(`[MIDDLEWARE] Token extracted: ${token ? token.substring(0, 20) + '...' : 'NONE'}`);
+    // console.log(`[MIDDLEWARE] Token extracted: ${token ? token.substring(0, 20) + '...' : 'NONE'}`);
 
     if (!token) {
       logger.warn('Authentication required: No token provided', { traceId, spanId });
@@ -144,15 +144,15 @@ export const requireAuth = async (
       emailVerified: decoded.emailVerified || false,
     };
 
-    console.log(`[MIDDLEWARE] User authenticated: ${req.user.id}, calling next()`);
+    // console.log(`[MIDDLEWARE] User authenticated: ${req.user.id}, calling next()`);
     
-    logger.info('User authenticated successfully', {
-      traceId,
-      spanId,
-      userId: req.user.id,
-      email: req.user.email,
-      roles: req.user.roles,
-    });
+    // logger.info('User authenticated successfully', {
+    //   traceId,
+    //   spanId,
+    //   userId: req.user.id,
+    //   email: req.user.email,
+    //   roles: req.user.roles,
+    // });
 
     next();
   } catch (error: any) {
@@ -323,13 +323,13 @@ export const requireRoles = (...roles: string[]) => {
       return;
     }
 
-    logger.debug('Authorization check passed', {
-      traceId,
-      spanId,
-      userId: req.user.id,
-      userRoles,
-      requiredRoles: roles,
-    });
+    // logger.debug('Authorization check passed', {
+    //   traceId,
+    //   spanId,
+    //   userId: req.user.id,
+    //   userRoles,
+    //   requiredRoles: roles,
+    // });
 
     next();
   };

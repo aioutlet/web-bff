@@ -17,10 +17,10 @@ export const login = asyncHandler(async (req: RequestWithTraceContext, res: Resp
 const { traceId, spanId } = req;
 const { email, password } = req.body;
 
-logger.info('Login attempt', {
-  traceId, spanId,
-  email,
-});
+// logger.info('Login attempt', {
+//   traceId, spanId,
+//   email,
+// });
 
 const data = await authClient.login(
   { email, password },
@@ -161,9 +161,9 @@ if (!token) {
   return;
 }
 
-logger.info('Token verification attempt', {
-  traceId, spanId,
-});
+// logger.info('Token verification attempt', {
+//   traceId, spanId,
+// });
 
 const data = await authClient.verifyToken(token, {
   'traceparent': `00-${traceId}-${spanId}-01`,

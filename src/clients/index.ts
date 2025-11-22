@@ -1,9 +1,7 @@
 /**
  * External Clients
- * Exports clients for external service communication
+ * Exports clients for external domain service communication
  */
-
-export { default as daprClient } from './dapr.client.service.js';
 
 // Service clients
 export { authClient } from './auth.client.js';

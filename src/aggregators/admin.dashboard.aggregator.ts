@@ -74,7 +74,7 @@ export class AdminDashboardAggregator {
     authHeaders: Record<string, string>,
     options?: { includeRecent?: boolean; recentLimit?: number }
   ): Promise<DashboardStats & { recentOrders?: RecentOrder[]; recentUsers?: RecentUser[] }> {
-    logger.info('Aggregating dashboard stats from microservices', { traceId, spanId, options });
+    // logger.info('Aggregating dashboard stats from microservices', { traceId, spanId, options });
 
     const headers = {
       traceparent: `00-${traceId}-${spanId}-01`,
@@ -233,22 +233,22 @@ export class AdminDashboardAggregator {
         }
       }
 
-      logger.info('Dashboard stats aggregated successfully', {
-        traceId,
-        spanId,
-        servicesResponded: {
-          users: userStats.status === 'fulfilled',
-          orders: orderStats.status === 'fulfilled',
-          products: productStats.status === 'fulfilled',
-          inventory: inventoryStats.status === 'fulfilled',
-          reviews: reviewStats.status === 'fulfilled',
-        },
-        stats: {
-          users: userStatsData.total,
-          orders: orderStatsData.total,
-          inventory: inventoryStatsData.totalItems,
-        },
-      });
+      // logger.info('Dashboard stats aggregated successfully', {
+      //   traceId,
+      //   spanId,
+      //   servicesResponded: {
+      //     users: userStats.status === 'fulfilled',
+      //     orders: orderStats.status === 'fulfilled',
+      //     products: productStats.status === 'fulfilled',
+      //     inventory: inventoryStats.status === 'fulfilled',
+      //     reviews: reviewStats.status === 'fulfilled',
+      //   },
+      //   stats: {
+      //     users: userStatsData.total,
+      //     orders: orderStatsData.total,
+      //     inventory: inventoryStatsData.totalItems,
+      //   },
+      // });
 
       return aggregatedStats;
     } catch (error: any) {

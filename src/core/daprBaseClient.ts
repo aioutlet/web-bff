@@ -1,4 +1,6 @@
-import logger from '../core/logger';
+import logger from './logger';
+import { HttpMethod } from '@dapr/dapr';
+import { daprClient } from './daprClient';
 
 export class DaprBaseClient {
   protected serviceName: string;
@@ -12,7 +14,6 @@ export class DaprBaseClient {
 
   /**
    * Make a request to another service via Dapr
-   * Updated: 2025-11-19 17:13
    */
   private async daprRequest<T>(
     method: string,
@@ -20,11 +21,7 @@ export class DaprBaseClient {
     data?: any,
     headers?: Record<string, string>
   ): Promise<T> {
-    // Lazy load Dapr modules only when needed
-    const { HttpMethod } = await import('@dapr/dapr');
-    const { daprClient } = await import('./dapr.client.service.js');
-
-    const methodMap: Record<string, any> = {
+    const methodMap: Record<string, HttpMethod> = {
       GET: HttpMethod.GET,
       POST: HttpMethod.POST,
       PUT: HttpMethod.PUT,
@@ -32,18 +29,14 @@ export class DaprBaseClient {
       DELETE: HttpMethod.DELETE,
     };
 
-    console.log(`[BaseClient ${new Date().toISOString()}] Method: ${method}, Headers received:`, headers);
-
-    logger.debug(`Dapr ${method} request to ${this.serviceName}`, {
-      url,
-      correlationId: headers?.['x-correlation-id'],
-      headers: headers || 'undefined',
-    });
+    // logger.debug(`Dapr ${method} request to ${this.serviceName}`, {
+    //   url,
+    //   correlationId: headers?.['x-correlation-id'],
+    //   headers: headers || 'undefined',
+    // });
 
     // Only pass metadata if headers exist and are not empty
     const metadata = headers && Object.keys(headers).length > 0 ? { headers } : undefined;
-    // console.log(`[BaseClient Debug] Headers:`, headers);
-    // console.log(`[BaseClient Debug] Metadata:`, JSON.stringify(metadata));
 
     const response = await daprClient.invokeService<T>(
       this.appId,
@@ -53,10 +46,10 @@ export class DaprBaseClient {
       metadata
     );
 
-    logger.debug(`Dapr response from ${this.serviceName}`, {
-      url,
-      correlationId: headers?.['x-correlation-id'],
-    });
+    // logger.debug(`Dapr response from ${this.serviceName}`, {
+    //   url,
+    //   correlationId: headers?.['x-correlation-id'],
+    // });
 
     return response;
   }
@@ -96,4 +89,3 @@ export class DaprBaseClient {
     return this.daprRequest<T>('DELETE', url, undefined, headers);
   }
 }
-

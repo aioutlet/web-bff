@@ -25,13 +25,13 @@ export const getDashboardStats = asyncHandler(
     const includeRecent = req.query.includeRecent === 'true';
     const recentLimit = parseInt(req.query.recentLimit as string) || 10;
 
-    logger.info('[BFF] Dashboard stats endpoint called', {
-      traceId,
-      spanId,
-      includeRecent,
-      recentLimit,
-      timestamp: new Date().toISOString(),
-    });
+    // logger.info('[BFF] Dashboard stats endpoint called', {
+    //   traceId,
+    //   spanId,
+    //   includeRecent,
+    //   recentLimit,
+    //   timestamp: new Date().toISOString(),
+    // });
 
     const authHeaders = {
       authorization: req.get('authorization') || '',
@@ -42,7 +42,7 @@ export const getDashboardStats = asyncHandler(
       recentLimit,
     });
 
-    logger.info('[BFF] Dashboard stats completed successfully', { traceId, spanId });
+    // logger.info('[BFF] Dashboard stats completed successfully', { traceId, spanId });
 
     res.json({
       success: true,

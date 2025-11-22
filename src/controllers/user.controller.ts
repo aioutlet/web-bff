@@ -67,14 +67,14 @@ export const updateProfile = async (
     const token = requireAuth(req, res);
     if (!token) return;
 
-    const { firstName, lastName, phone, dateOfBirth } = req.body;
+    const { firstName, lastName, phoneNumber, dateOfBirth } = req.body;
 
     logger.info('Update user profile', {
       traceId, spanId,
     });
 
     const profile = await userClient.updateProfile(
-      { firstName, lastName, phone, dateOfBirth },
+      { firstName, lastName, phoneNumber, dateOfBirth },
       token
     );
 

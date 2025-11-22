@@ -36,7 +36,7 @@ class DaprClientService {
     metadata?: InvokeMetadata
   ): Promise<T> {
     try {
-      console.log(`[Dapr Debug] Received metadata:`, JSON.stringify(metadata));
+      // console.log(`[Dapr Debug] Received metadata:`, JSON.stringify(metadata));
       
       const cleanMethodName = methodName.startsWith('/') ? methodName.slice(1) : methodName;
       const daprUrl = `http://${config.dapr.host}:${config.dapr.httpPort}/v1.0/invoke/${appId}/method/${cleanMethodName}`;
@@ -46,12 +46,12 @@ class DaprClientService {
         ...metadata?.headers,
       };
       
-      console.log(`[Dapr] Making HTTP call with headers:`, {
-        url: daprUrl,
-        method: httpMethod.toUpperCase(),
-        headers: fetchHeaders,
-        hasData: !!data,
-      });
+      // console.log(`[Dapr] Making HTTP call with headers:`, {
+      //   url: daprUrl,
+      //   method: httpMethod.toUpperCase(),
+      //   headers: fetchHeaders,
+      //   hasData: !!data,
+      // });
       
       const response = await fetch(daprUrl, {
         method: httpMethod.toUpperCase(),

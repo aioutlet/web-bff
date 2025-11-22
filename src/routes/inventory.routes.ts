@@ -30,7 +30,7 @@ router.post('/batch', async (req: Request, res: Response) => {
       correlationId: req.headers['x-correlation-id'],
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: inventoryData,
     });
@@ -41,7 +41,7 @@ router.post('/batch', async (req: Request, res: Response) => {
       correlationId: req.headers['x-correlation-id'],
     });
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch inventory',
     });

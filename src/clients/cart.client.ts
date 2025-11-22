@@ -1,4 +1,4 @@
-import { DaprBaseClient } from './dapr.base.client';
+import { DaprBaseClient } from '../core/daprBaseClient';
 import config from '@/core/config';
 
 interface CartItem {
