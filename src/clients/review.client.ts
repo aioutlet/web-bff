@@ -53,6 +53,11 @@ export class ReviewClient extends DaprBaseClient {
     return this.get<any>(`/api/reviews/products/${productId}/rating`, headers);
   }
 
+  // Review CRUD operations
+  async createReview(data: any, headers?: Record<string, string>): Promise<any> {
+    return this.post<any>('/api/reviews', data, headers);
+  }
+
   // Admin methods
   async getAllReviews(headers: Record<string, string>, params?: any): Promise<any> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';

@@ -7,7 +7,6 @@
 import { Response } from 'express';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import { asyncHandler } from '@middleware/asyncHandler.middleware';
-import logger from '../core/logger';
 import { adminDashboardAggregator } from '../aggregators/admin.dashboard.aggregator';
 
 // ============================================================================

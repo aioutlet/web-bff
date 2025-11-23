@@ -7,6 +7,7 @@ import adminRoutes from './admin.routes';
 import orderRoutes from './order.routes';
 import cartRoutes from './cart.routes';
 import inventoryRoutes from './inventory.routes';
+import reviewRoutes from './review.routes';
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use('/orders', orderRoutes);
 router.use('/cart', cartRoutes);
 router.use('/admin', adminRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/reviews', reviewRoutes);
 
 export default router;
