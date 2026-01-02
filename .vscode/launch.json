@@ -11,9 +11,9 @@
       "envFile": "${workspaceFolder}/.env",
       "env": {
         "NODE_ENV": "development",
-        "PORT": "3100",
-        "DAPR_HTTP_PORT": "3600",
-        "DAPR_GRPC_PORT": "50060"
+        "PORT": "1013",
+        "DAPR_HTTP_PORT": "3513",
+        "DAPR_GRPC_PORT": "50013"
       },
       "console": "integratedTerminal",
       "skipFiles": ["<node_internals>/**"],
