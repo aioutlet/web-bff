@@ -17,7 +17,5 @@ dapr run `
   --app-port 8080 `
   --dapr-http-port 3580 `
   --dapr-grpc-port 50013 `
-  --resources-path .dapr/components `
-  --config .dapr/config.yaml `
   --log-level warn `
   -- npx tsx watch src/server.ts
