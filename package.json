@@ -22,7 +22,7 @@
     "express",
     "typescript"
   ],
-  "author": "aioutlet",
+  "author": "xshopai",
   "license": "MIT",
   "dependencies": {
     "@dapr/dapr": "^3.5.0",

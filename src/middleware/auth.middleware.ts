@@ -52,7 +52,7 @@ async function getJwtConfig(): Promise<{ secret: string; algorithm: string; issu
       secret: secretStoreResponse.secret,
       algorithm: secretStoreResponse.algorithm || 'HS256',
       issuer: secretStoreResponse.issuer || 'auth-service',
-      audience: secretStoreResponse.audience || 'aioutlet-platform',
+      audience: secretStoreResponse.audience || 'xshopai-platform',
     };
 
     return jwtConfigCache;

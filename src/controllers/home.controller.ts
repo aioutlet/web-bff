@@ -12,7 +12,7 @@ export const info = (_req: Request, res: Response): void => {
   res.json({
     message: 'Welcome to the Web BFF Service',
     service: 'web-bff',
-    description: 'Backend for Frontend aggregation service for xShop.ai platform',
+    description: 'Backend for Frontend aggregation service for xshop.ai platform',
     environment: process.env.NODE_ENV || 'development',
   });
 };
