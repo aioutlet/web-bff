@@ -1,6 +1,6 @@
 # 🌐 Web BFF (Backend for Frontend)
 
-API aggregation and orchestration service for xshop.ai - provides a unified API layer for web clients, aggregating data from multiple microservices and handling client-specific logic.
+API aggregation and orchestration service for xshopai - provides a unified API layer for web clients, aggregating data from multiple microservices and handling client-specific logic.
 
 ## 🚀 Quick Start
 

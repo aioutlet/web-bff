@@ -90,9 +90,9 @@ ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/server.js"]
 
 # Labels for better image management and security scanning
-LABEL maintainer="xshop.ai Team"
+LABEL maintainer="xshopai Team"
 LABEL service="web-bff"
 LABEL version="1.0.0"
 LABEL org.opencontainers.image.source="https://github.com/xshopai/xshopai"
-LABEL org.opencontainers.image.description="Web BFF for xshop.ai platform"
-LABEL org.opencontainers.image.vendor="xshop.ai"
+LABEL org.opencontainers.image.description="Web BFF for xshopai platform"
+LABEL org.opencontainers.image.vendor="xshopai"
