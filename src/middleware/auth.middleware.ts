@@ -228,15 +228,30 @@ export const optionalAuth = async (
 
   try {
     const token = extractToken(req);
+    
+    // DEBUG: Log token extraction result
+    console.log('🔐 [optionalAuth] Token extraction:', {
+      hasToken: !!token,
+      tokenPreview: token ? `${token.substring(0, 30)}...` : 'NONE',
+      authHeader: req.headers.authorization ? 'present' : 'missing',
+      path: req.path,
+    });
 
     if (!token) {
       // No token provided, continue without user
+      console.log('🔐 [optionalAuth] No token, continuing as anonymous');
       req.user = undefined;
       return next();
     }
 
     // Get JWT config
     const jwtConfig = await getJwtConfig();
+    console.log('🔐 [optionalAuth] JWT config:', {
+      hasSecret: !!jwtConfig.secret,
+      algorithm: jwtConfig.algorithm,
+      issuer: jwtConfig.issuer,
+      audience: jwtConfig.audience,
+    });
 
     // Verify token
     const decoded = jwt.verify(token, jwtConfig.secret, {
@@ -244,6 +259,13 @@ export const optionalAuth = async (
       issuer: jwtConfig.issuer,
       audience: jwtConfig.audience
     }) as any;
+
+    console.log('🔐 [optionalAuth] Token decoded:', {
+      sub: decoded.sub,
+      id: decoded.id,
+      email: decoded.email,
+      roles: decoded.roles,
+    });
 
     // Attach user information if valid
     if (decoded.sub || decoded.id) {
@@ -256,6 +278,11 @@ export const optionalAuth = async (
         emailVerified: decoded.emailVerified || false,
       };
 
+      console.log('🔐 [optionalAuth] User attached to request:', {
+        userId: req.user.id,
+        email: req.user.email,
+      });
+
       logger.debug('Optional auth: User authenticated', {
         traceId,
         spanId,
@@ -266,6 +293,11 @@ export const optionalAuth = async (
     next();
   } catch (error: any) {
     // Token is invalid, but we don't fail the request
+    console.log('🔐 [optionalAuth] Token verification FAILED:', {
+      errorName: error.name,
+      errorMessage: error.message,
+    });
+    
     logger.debug('Optional auth: Token invalid, continuing without user', {
       traceId,
       spanId,

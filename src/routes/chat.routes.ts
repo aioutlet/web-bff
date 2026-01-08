@@ -33,11 +33,22 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
       });
     }
 
+    // DEBUG: Log user context from optionalAuth
+    console.log('💬 [chat.routes] /message endpoint:', {
+      hasUser: !!authReq.user,
+      userId: authReq.user?.id,
+      userEmail: authReq.user?.email,
+      messagePreview: message.substring(0, 50),
+    });
+
     log.info('Forwarding chat message to chat-service', {
       userId: authReq.user?.id,
       conversationId,
       messageLength: message.length,
     });
+
+    // Get authorization header to pass through for order-service calls
+    const authHeader = req.headers['authorization'] as string | undefined;
 
     // Forward to chat-service with user context
     const response = await daprClient.invokeService(config.services.chat, 'api/chat/message', HttpMethod.POST, {
@@ -45,6 +56,7 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
       conversationId,
       context,
       userId: authReq.user?.id, // Will be undefined if not authenticated
+      authToken: authHeader, // Pass auth token for downstream service calls
     });
 
     return res.json(response);
