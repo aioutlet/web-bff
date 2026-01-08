@@ -26,6 +26,7 @@ interface Config {
     cart: string;
     order: string;
     admin: string;
+    chat: string;
   };
   logging: {
     level: string;
@@ -54,6 +55,7 @@ const config: Config = {
     cart: process.env.CART_SERVICE_APP_ID || 'cart-service',
     order: process.env.ORDER_SERVICE_APP_ID || 'order-service',
     admin: process.env.ADMIN_SERVICE_APP_ID || 'admin-service',
+    chat: process.env.CHAT_SERVICE_APP_ID || 'chat-service',
   },
   logging: {
     level: process.env.LOG_LEVEL || 'info',
