@@ -5,6 +5,7 @@ const { combine, timestamp, printf, colorize, errors } = winston.format;
 // Console format for development
 const consoleFormat = printf(({ level, message, timestamp, traceId, spanId, ...metadata }: any) => {
   // Remove color codes from level for uppercase conversion
+  // eslint-disable-next-line no-control-regex
   const cleanLevel = level.replace(/\u001b\[\d+m/g, '');
   let msg = `${timestamp} [${cleanLevel.toUpperCase()}]`;
 

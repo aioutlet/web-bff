@@ -55,10 +55,12 @@ export class StorefrontAggregator {
       // Process products with inventory enrichment
       let enrichedProducts: EnrichedProduct[] = [];
       if (trending_products && trending_products.length > 0) {
-        const skus = trending_products.map((p) => p.sku).filter((sku): sku is string => Boolean(sku));
+        const skus = trending_products
+          .map((p) => p.sku)
+          .filter((sku): sku is string => Boolean(sku));
 
         // Fetch inventory data in parallel
-        let inventoryMap = new Map<string, InventoryItem>();
+        const inventoryMap = new Map<string, InventoryItem>();
         try {
           const inventoryData = await inventoryClient.getInventoryBatch(skus);
           inventoryData.forEach((item) => inventoryMap.set(item.sku, item));
@@ -138,20 +140,56 @@ export class StorefrontAggregator {
       string,
       { department: string; categoryName: string; path: string }
     > = {
-      Clothing: { department: 'Women', categoryName: 'Clothing', path: '/products?department=women&category=clothing' },
-      Accessories: { department: 'Women', categoryName: 'Accessories', path: '/products?department=women&category=accessories' },
-      Apparel: { department: 'Sports', categoryName: 'Apparel', path: '/products?department=sports&category=apparel' },
-      Footwear: { department: 'Kids', categoryName: 'Footwear', path: '/products?department=kids&category=footwear' },
-      Mobile: { department: 'Electronics', categoryName: 'Mobile', path: '/products?department=electronics&category=mobile' },
-      Audio: { department: 'Electronics', categoryName: 'Audio', path: '/products?department=electronics&category=audio' },
+      Clothing: {
+        department: 'Women',
+        categoryName: 'Clothing',
+        path: '/products?department=women&category=clothing',
+      },
+      Accessories: {
+        department: 'Women',
+        categoryName: 'Accessories',
+        path: '/products?department=women&category=accessories',
+      },
+      Apparel: {
+        department: 'Sports',
+        categoryName: 'Apparel',
+        path: '/products?department=sports&category=apparel',
+      },
+      Footwear: {
+        department: 'Kids',
+        categoryName: 'Footwear',
+        path: '/products?department=kids&category=footwear',
+      },
+      Mobile: {
+        department: 'Electronics',
+        categoryName: 'Mobile',
+        path: '/products?department=electronics&category=mobile',
+      },
+      Audio: {
+        department: 'Electronics',
+        categoryName: 'Audio',
+        path: '/products?department=electronics&category=audio',
+      },
       Computers: {
         department: 'Electronics',
         categoryName: 'Computers',
         path: '/products?department=electronics&category=computers',
       },
-      Gaming: { department: 'Electronics', categoryName: 'Gaming', path: '/products?department=electronics&category=gaming' },
-      Fiction: { department: 'Books', categoryName: 'Fiction', path: '/products?department=books&category=fiction' },
-      Nonfiction: { department: 'Books', categoryName: 'Nonfiction', path: '/products?department=books&category=nonfiction' },
+      Gaming: {
+        department: 'Electronics',
+        categoryName: 'Gaming',
+        path: '/products?department=electronics&category=gaming',
+      },
+      Fiction: {
+        department: 'Books',
+        categoryName: 'Fiction',
+        path: '/products?department=books&category=fiction',
+      },
+      Nonfiction: {
+        department: 'Books',
+        categoryName: 'Nonfiction',
+        path: '/products?department=books&category=nonfiction',
+      },
     };
 
     // Map category names to display names and images

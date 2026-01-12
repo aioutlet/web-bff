@@ -37,31 +37,28 @@ const requireAuth = (req: RequestWithTraceContext, res: Response): string | null
  * Get current user profile
  */
 export const getProfile = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const token = requireAuth(req, res);
+  if (!token) return;
 
-const { traceId, spanId } = req;
-const token = requireAuth(req, res);
-if (!token) return;
+  logger.info('Get user profile', {
+    traceId,
+    spanId,
+  });
 
-logger.info('Get user profile', {
-  traceId, spanId,
-});
+  const profile = await userClient.getProfile(token);
 
-const profile = await userClient.getProfile(token);
-
-res.json({
-  success: true,
-  data: profile,
-});
+  res.json({
+    success: true,
+    data: profile,
+  });
 });
 
 /**
  * PATCH /api/user/profile
  * Update user profile
  */
-export const updateProfile = async (
-  req: RequestWithTraceContext,
-  res: Response
-): Promise<void> => {
+export const updateProfile = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
     const { traceId, spanId } = req;
     const token = requireAuth(req, res);
@@ -70,7 +67,8 @@ export const updateProfile = async (
     const { firstName, lastName, phoneNumber, dateOfBirth } = req.body;
 
     logger.info('Update user profile', {
-      traceId, spanId,
+      traceId,
+      spanId,
     });
 
     const profile = await userClient.updateProfile(
@@ -85,7 +83,8 @@ export const updateProfile = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Update user profile error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -102,17 +101,15 @@ export const updateProfile = async (
  * DELETE /api/user/profile
  * Delete user account
  */
-export const deleteAccount = async (
-  req: RequestWithTraceContext,
-  res: Response
-): Promise<void> => {
+export const deleteAccount = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
     const { traceId, spanId } = req;
     const token = requireAuth(req, res);
     if (!token) return;
 
     logger.info('Delete user account', {
-      traceId, spanId,
+      traceId,
+      spanId,
     });
 
     await userClient.deleteAccount(token);
@@ -124,7 +121,8 @@ export const deleteAccount = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Delete user account error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -146,31 +144,28 @@ export const deleteAccount = async (
  * Get all user addresses
  */
 export const getAddresses = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const token = requireAuth(req, res);
+  if (!token) return;
 
-const { traceId, spanId } = req;
-const token = requireAuth(req, res);
-if (!token) return;
+  logger.info('Get user addresses', {
+    traceId,
+    spanId,
+  });
 
-logger.info('Get user addresses', {
-  traceId, spanId,
-});
+  const addresses = await userClient.getAddresses(token);
 
-const addresses = await userClient.getAddresses(token);
-
-res.json({
-  success: true,
-  data: addresses,
-});
+  res.json({
+    success: true,
+    data: addresses,
+  });
 });
 
 /**
  * POST /api/user/addresses
  * Create new address
  */
-export const createAddress = async (
-  req: RequestWithTraceContext,
-  res: Response
-): Promise<void> => {
+export const createAddress = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
     const { traceId, spanId } = req;
     const token = requireAuth(req, res);
@@ -179,7 +174,8 @@ export const createAddress = async (
     const { type, street, city, state, postalCode, country, isDefault } = req.body;
 
     logger.info('Create address', {
-      traceId, spanId,
+      traceId,
+      spanId,
     });
 
     const address = await userClient.createAddress(
@@ -194,7 +190,8 @@ export const createAddress = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Create address error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -211,10 +208,7 @@ export const createAddress = async (
  * PATCH /api/user/addresses/:id
  * Update address
  */
-export const updateAddress = async (
-  req: RequestWithTraceContext,
-  res: Response
-): Promise<void> => {
+export const updateAddress = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
     const { traceId, spanId } = req;
     const token = requireAuth(req, res);
@@ -224,7 +218,8 @@ export const updateAddress = async (
     const { type, street, city, state, postalCode, country, isDefault } = req.body;
 
     logger.info('Update address', {
-      traceId, spanId,
+      traceId,
+      spanId,
       addressId: id,
     });
 
@@ -241,7 +236,8 @@ export const updateAddress = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Update address error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -258,10 +254,7 @@ export const updateAddress = async (
  * DELETE /api/user/addresses/:id
  * Delete address
  */
-export const deleteAddress = async (
-  req: RequestWithTraceContext,
-  res: Response
-): Promise<void> => {
+export const deleteAddress = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
     const { traceId, spanId } = req;
     const token = requireAuth(req, res);
@@ -270,7 +263,8 @@ export const deleteAddress = async (
     const { id } = req.params;
 
     logger.info('Delete address', {
-      traceId, spanId,
+      traceId,
+      spanId,
       addressId: id,
     });
 
@@ -283,7 +277,8 @@ export const deleteAddress = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Delete address error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -312,7 +307,8 @@ export const setDefaultAddress = async (
     const { id } = req.params;
 
     logger.info('Set default address', {
-      traceId, spanId,
+      traceId,
+      spanId,
       addressId: id,
     });
 
@@ -325,7 +321,8 @@ export const setDefaultAddress = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Set default address error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -356,7 +353,8 @@ export const getPaymentMethods = async (
     if (!token) return;
 
     logger.info('Get payment methods', {
-      traceId, spanId,
+      traceId,
+      spanId,
     });
 
     const paymentMethods = await userClient.getPaymentMethods(token);
@@ -368,7 +366,8 @@ export const getPaymentMethods = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Get payment methods error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -397,7 +396,8 @@ export const createPaymentMethod = async (
     const { type, cardNumber, cardholderName, expiryMonth, expiryYear, cvv, isDefault } = req.body;
 
     logger.info('Create payment method', {
-      traceId, spanId,
+      traceId,
+      spanId,
     });
 
     const paymentMethod = await userClient.createPaymentMethod(
@@ -412,7 +412,8 @@ export const createPaymentMethod = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Create payment method error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -442,7 +443,8 @@ export const updatePaymentMethod = async (
     const { cardholderName, expiryMonth, expiryYear, isDefault } = req.body;
 
     logger.info('Update payment method', {
-      traceId, spanId,
+      traceId,
+      spanId,
       paymentId: id,
     });
 
@@ -459,7 +461,8 @@ export const updatePaymentMethod = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Update payment method error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -488,7 +491,8 @@ export const deletePaymentMethod = async (
     const { id } = req.params;
 
     logger.info('Delete payment method', {
-      traceId, spanId,
+      traceId,
+      spanId,
       paymentId: id,
     });
 
@@ -501,7 +505,8 @@ export const deletePaymentMethod = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Delete payment method error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -530,7 +535,8 @@ export const setDefaultPaymentMethod = async (
     const { id } = req.params;
 
     logger.info('Set default payment method', {
-      traceId, spanId,
+      traceId,
+      spanId,
       paymentId: id,
     });
 
@@ -543,7 +549,8 @@ export const setDefaultPaymentMethod = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Set default payment method error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -565,31 +572,28 @@ export const setDefaultPaymentMethod = async (
  * Get user wishlist
  */
 export const getWishlist = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const token = requireAuth(req, res);
+  if (!token) return;
 
-const { traceId, spanId } = req;
-const token = requireAuth(req, res);
-if (!token) return;
+  logger.info('Get wishlist', {
+    traceId,
+    spanId,
+  });
 
-logger.info('Get wishlist', {
-  traceId, spanId,
-});
+  const wishlist = await userClient.getWishlist(token);
 
-const wishlist = await userClient.getWishlist(token);
-
-res.json({
-  success: true,
-  data: wishlist,
-});
+  res.json({
+    success: true,
+    data: wishlist,
+  });
 });
 
 /**
  * POST /api/user/wishlist
  * Add item to wishlist
  */
-export const addToWishlist = async (
-  req: RequestWithTraceContext,
-  res: Response
-): Promise<void> => {
+export const addToWishlist = async (req: RequestWithTraceContext, res: Response): Promise<void> => {
   try {
     const { traceId, spanId } = req;
     const token = requireAuth(req, res);
@@ -598,7 +602,8 @@ export const addToWishlist = async (
     const { productId } = req.body;
 
     logger.info('Add to wishlist', {
-      traceId, spanId,
+      traceId,
+      spanId,
       productId,
     });
 
@@ -611,7 +616,8 @@ export const addToWishlist = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Add to wishlist error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -640,7 +646,8 @@ export const removeFromWishlist = async (
     const { id } = req.params;
 
     logger.info('Remove from wishlist', {
-      traceId, spanId,
+      traceId,
+      spanId,
       wishlistId: id,
     });
 
@@ -653,7 +660,8 @@ export const removeFromWishlist = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Remove from wishlist error', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 

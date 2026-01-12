@@ -61,79 +61,80 @@ const requireAuth = (
  * Create a new order (customer only)
  */
 export const createOrder = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
-const { traceId, spanId } = req;
-const auth = requireAuth(req, res);
-if (!auth) return;
-
-logger.info('Creating order', {
-  traceId, spanId,
-  customerId: auth.userId,
-});
-
-// Fetch user profile to capture customer information snapshot
-let customerName = '';
-let customerEmail = '';
-let customerPhone = '';
-
-try {
-  const { userClient } = await import('../clients/user.client');
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace('Bearer ', '');
-  
-  if (token) {
-    const userProfile = await userClient.getProfile(token);
-    customerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
-    customerEmail = userProfile.email || '';
-    customerPhone = userProfile.phoneNumber || '';
-    
-    logger.info('Fetched user profile for order', {
-      traceId,
-      spanId,
-      customerId: auth.userId,
-      customerName,
-      customerPhone,
-    });
-  }
-} catch (error: any) {
-  logger.warn('Failed to fetch user profile, using JWT data only', {
+  logger.info('Creating order', {
     traceId,
     spanId,
-    error: error.message,
+    customerId: auth.userId,
   });
-}
 
-// Set customer information from JWT token and user profile
-const orderData = {
-  ...req.body,
-  customerId: auth.userId,
-  customerName,
-  customerEmail,
-  customerPhone,
-};
+  // Fetch user profile to capture customer information snapshot
+  let customerName = '';
+  let customerEmail = '';
+  let customerPhone = '';
 
-// Forward JWT token to order service
-const headers: Record<string, string> = {};
-if (req.headers.authorization) {
-  headers.Authorization = req.headers.authorization;
-}
-if (req.correlationId) {
-  headers['X-Correlation-ID'] = req.correlationId;
-}
+  try {
+    const { userClient } = await import('../clients/user.client');
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.replace('Bearer ', '');
 
-console.log('[OrderController] Forwarding headers to order-service:', headers);
+    if (token) {
+      const userProfile = await userClient.getProfile(token);
+      customerName = `${userProfile.firstName} ${userProfile.lastName}`.trim();
+      customerEmail = userProfile.email || '';
+      customerPhone = userProfile.phoneNumber || '';
 
-const order = await orderClient.createOrder(orderData, headers);
+      logger.info('Fetched user profile for order', {
+        traceId,
+        spanId,
+        customerId: auth.userId,
+        customerName,
+        customerPhone,
+      });
+    }
+  } catch (error: any) {
+    logger.warn('Failed to fetch user profile, using JWT data only', {
+      traceId,
+      spanId,
+      error: error.message,
+    });
+  }
 
-logger.info('Order created successfully', {
-  traceId, spanId,
-  orderId: order.id,
-});
+  // Set customer information from JWT token and user profile
+  const orderData = {
+    ...req.body,
+    customerId: auth.userId,
+    customerName,
+    customerEmail,
+    customerPhone,
+  };
 
-res.status(201).json({
-  success: true,
-  data: order,
-});
+  // Forward JWT token to order service
+  const headers: Record<string, string> = {};
+  if (req.headers.authorization) {
+    headers.Authorization = req.headers.authorization;
+  }
+  if (req.correlationId) {
+    headers['X-Correlation-ID'] = req.correlationId;
+  }
+
+  console.log('[OrderController] Forwarding headers to order-service:', headers);
+
+  const order = await orderClient.createOrder(orderData, headers);
+
+  logger.info('Order created successfully', {
+    traceId,
+    spanId,
+    orderId: order.id,
+  });
+
+  res.status(201).json({
+    success: true,
+    data: order,
+  });
 });
 
 /**
@@ -141,30 +142,30 @@ res.status(201).json({
  * Get current user's orders
  */
 export const getMyOrders = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
-const { traceId, spanId } = req;
-const auth = requireAuth(req, res);
-if (!auth) return;
+  logger.info('Fetching user orders', {
+    traceId,
+    spanId,
+    customerId: auth.userId,
+  });
 
-logger.info('Fetching user orders', {
-  traceId, spanId,
-  customerId: auth.userId,
-});
+  const headers: Record<string, string> = {};
+  if (req.headers.authorization) {
+    headers.Authorization = req.headers.authorization;
+  }
+  if (req.correlationId) {
+    headers['X-Correlation-ID'] = req.correlationId;
+  }
 
-const headers: Record<string, string> = {};
-if (req.headers.authorization) {
-  headers.Authorization = req.headers.authorization;
-}
-if (req.correlationId) {
-  headers['X-Correlation-ID'] = req.correlationId;
-}
+  const orders = await orderClient.getMyOrders(auth.userId, headers);
 
-const orders = await orderClient.getMyOrders(auth.userId, headers);
-
-res.json({
-  success: true,
-  data: orders,
-});
+  res.json({
+    success: true,
+    data: orders,
+  });
 });
 
 /**
@@ -181,7 +182,8 @@ export const getMyOrdersPaged = async (
     if (!auth) return;
 
     logger.info('Fetching user orders (paged)', {
-      traceId, spanId,
+      traceId,
+      spanId,
       customerId: auth.userId,
       page: req.query.page,
       pageSize: req.query.pageSize,
@@ -209,7 +211,8 @@ export const getMyOrdersPaged = async (
   } catch (error: any) {
     const { traceId, spanId } = req;
     logger.error('Error fetching user orders (paged)', {
-      traceId, spanId,
+      traceId,
+      spanId,
       error: error.message,
     });
 
@@ -227,30 +230,30 @@ export const getMyOrdersPaged = async (
  * Get order by ID (customer can view own orders)
  */
 export const getOrderById = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const auth = requireAuth(req, res);
+  if (!auth) return;
 
-const { traceId, spanId } = req;
-const auth = requireAuth(req, res);
-if (!auth) return;
+  const { id } = req.params;
 
-const { id } = req.params;
+  logger.info('Fetching order', {
+    traceId,
+    spanId,
+    orderId: id,
+  });
 
-logger.info('Fetching order', {
-  traceId, spanId,
-  orderId: id,
-});
+  const headers: Record<string, string> = {};
+  if (req.headers.authorization) {
+    headers.Authorization = req.headers.authorization;
+  }
+  if (req.correlationId) {
+    headers['X-Correlation-ID'] = req.correlationId;
+  }
 
-const headers: Record<string, string> = {};
-if (req.headers.authorization) {
-  headers.Authorization = req.headers.authorization;
-}
-if (req.correlationId) {
-  headers['X-Correlation-ID'] = req.correlationId;
-}
+  const order = await orderClient.getOrderById(id, headers);
 
-const order = await orderClient.getOrderById(id, headers);
-
-res.json({
-  success: true,
-  data: order,
-});
+  res.json({
+    success: true,
+    data: order,
+  });
 });

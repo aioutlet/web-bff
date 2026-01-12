@@ -1,7 +1,7 @@
 /**
  * Review Routes for Web BFF
  * Route definitions only - all logic is in review.controller.ts
- * 
+ *
  * Customer routes: POST, PUT, DELETE own reviews (requires authentication)
  * Admin routes are handled separately in admin.routes.ts for consistency
  */

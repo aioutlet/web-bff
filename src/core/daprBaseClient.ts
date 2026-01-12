@@ -9,7 +9,7 @@ export class DaprBaseClient {
   constructor(appId: string, serviceName: string) {
     this.appId = appId;
     this.serviceName = serviceName;
-    logger.info(`[DaprBaseClient] Initialized for ${serviceName} with app Id ${appId}`);    
+    logger.info(`[DaprBaseClient] Initialized for ${serviceName} with app Id ${appId}`);
   }
 
   /**

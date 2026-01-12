@@ -19,7 +19,7 @@ const router = Router();
  */
 router.post('/message', optionalAuth as any, async (req: Request, res: Response) => {
   const authReq = req as RequestWithAuth;
-  const traceId = req.headers['x-trace-id'] as string || '';
+  const traceId = (req.headers['x-trace-id'] as string) || '';
   const log = withTraceContext(traceId, '');
 
   try {
@@ -51,13 +51,18 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
     const authHeader = req.headers['authorization'] as string | undefined;
 
     // Forward to chat-service with user context
-    const response = await daprClient.invokeService(config.services.chat, 'api/chat/message', HttpMethod.POST, {
-      message,
-      conversationId,
-      context,
-      userId: authReq.user?.id, // Will be undefined if not authenticated
-      authToken: authHeader, // Pass auth token for downstream service calls
-    });
+    const response = await daprClient.invokeService(
+      config.services.chat,
+      'api/chat/message',
+      HttpMethod.POST,
+      {
+        message,
+        conversationId,
+        context,
+        userId: authReq.user?.id, // Will be undefined if not authenticated
+        authToken: authHeader, // Pass auth token for downstream service calls
+      }
+    );
 
     return res.json(response);
   } catch (error: any) {
@@ -89,7 +94,7 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
  */
 router.get('/history/:conversationId', requireAuth as any, async (req: Request, res: Response) => {
   const authReq = req as RequestWithAuth;
-  const traceId = req.headers['x-trace-id'] as string || '';
+  const traceId = (req.headers['x-trace-id'] as string) || '';
   const log = withTraceContext(traceId, '');
 
   try {

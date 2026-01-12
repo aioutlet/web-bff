@@ -12,33 +12,31 @@ import { asyncHandler } from '@middleware/asyncHandler.middleware';
 /**
  * Get trending data (products and categories combined)
  */
-export const getTrendingData = asyncHandler(
-  async (req: RequestWithTraceContext, res: Response) => {
-    const { traceId, spanId } = req;
-    const productsLimit = parseInt(req.query.productsLimit as string) || 4;
-    const categoriesLimit = parseInt(req.query.categoriesLimit as string) || 5;
+export const getTrendingData = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+  const { traceId, spanId } = req;
+  const productsLimit = parseInt(req.query.productsLimit as string) || 4;
+  const categoriesLimit = parseInt(req.query.categoriesLimit as string) || 5;
 
-    logger.info('Fetching trending data', {
-      traceId,
-      spanId,
-      productsLimit,
-      categoriesLimit,
-    });
+  logger.info('Fetching trending data', {
+    traceId,
+    spanId,
+    productsLimit,
+    categoriesLimit,
+  });
 
-    // Single call to product service via aggregator (which calls /trending)
-    const trendingData = await storefrontAggregator.getTrendingData(
-      productsLimit,
-      categoriesLimit,
-      traceId,
-      spanId
-    );
+  // Single call to product service via aggregator (which calls /trending)
+  const trendingData = await storefrontAggregator.getTrendingData(
+    productsLimit,
+    categoriesLimit,
+    traceId,
+    spanId
+  );
 
-    res.json({
-      success: true,
-      data: trendingData,
-    });
-  }
-);
+  res.json({
+    success: true,
+    data: trendingData,
+  });
+});
 
 /**
  * Get product categories

@@ -24,12 +24,18 @@ export interface RequestWithAuth extends RequestWithTraceContext {
 }
 
 // Cache JWT config to avoid repeated Dapr calls
-let jwtConfigCache: { secret: string; algorithm: string; issuer: string; audience: string } | null = null;
+let jwtConfigCache: { secret: string; algorithm: string; issuer: string; audience: string } | null =
+  null;
 
 /**
  * Get JWT configuration from auth service
  */
-async function getJwtConfig(): Promise<{ secret: string; algorithm: string; issuer: string; audience: string }> {
+async function getJwtConfig(): Promise<{
+  secret: string;
+  algorithm: string;
+  issuer: string;
+  audience: string;
+}> {
   if (jwtConfigCache) {
     return jwtConfigCache;
   }
@@ -116,7 +122,7 @@ export const requireAuth = async (
     const decoded = jwt.verify(token, jwtConfig.secret, {
       algorithms: [jwtConfig.algorithm as jwt.Algorithm],
       issuer: jwtConfig.issuer,
-      audience: jwtConfig.audience
+      audience: jwtConfig.audience,
     }) as any;
 
     // Validate standard claims
@@ -145,7 +151,7 @@ export const requireAuth = async (
     };
 
     // console.log(`[MIDDLEWARE] User authenticated: ${req.user.id}, calling next()`);
-    
+
     // logger.info('User authenticated successfully', {
     //   traceId,
     //   spanId,
@@ -228,7 +234,7 @@ export const optionalAuth = async (
 
   try {
     const token = extractToken(req);
-    
+
     // DEBUG: Log token extraction result
     console.log('🔐 [optionalAuth] Token extraction:', {
       hasToken: !!token,
@@ -257,7 +263,7 @@ export const optionalAuth = async (
     const decoded = jwt.verify(token, jwtConfig.secret, {
       algorithms: [jwtConfig.algorithm as jwt.Algorithm],
       issuer: jwtConfig.issuer,
-      audience: jwtConfig.audience
+      audience: jwtConfig.audience,
     }) as any;
 
     console.log('🔐 [optionalAuth] Token decoded:', {
@@ -297,7 +303,7 @@ export const optionalAuth = async (
       errorName: error.name,
       errorMessage: error.message,
     });
-    
+
     logger.debug('Optional auth: Token invalid, continuing without user', {
       traceId,
       spanId,

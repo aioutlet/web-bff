@@ -70,7 +70,10 @@ export class OrderClient extends DaprBaseClient {
     return this.get<Order[]>('/api/admin/orders', headers);
   }
 
-  async getOrdersPaged(headers: Record<string, string>, params?: any): Promise<PagedResponse<Order>> {
+  async getOrdersPaged(
+    headers: Record<string, string>,
+    params?: any
+  ): Promise<PagedResponse<Order>> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.get<PagedResponse<Order>>(`/api/admin/orders/paged${queryString}`, headers);
   }
@@ -79,7 +82,11 @@ export class OrderClient extends DaprBaseClient {
     return this.get<Order>(`/api/admin/orders/${orderId}`, headers);
   }
 
-  async updateOrderStatus(orderId: string, data: any, headers: Record<string, string>): Promise<Order> {
+  async updateOrderStatus(
+    orderId: string,
+    data: any,
+    headers: Record<string, string>
+  ): Promise<Order> {
     return this.put<Order>(`/api/admin/orders/${orderId}/status`, data, headers);
   }
 
@@ -96,7 +103,9 @@ export class OrderClient extends DaprBaseClient {
     if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
 
     const queryString = params.toString();
-    const endpoint = queryString ? `/api/admin/orders/stats?${queryString}` : '/api/admin/orders/stats';
+    const endpoint = queryString
+      ? `/api/admin/orders/stats?${queryString}`
+      : '/api/admin/orders/stats';
     return this.get<any>(endpoint, headers);
   }
 

@@ -25,7 +25,7 @@ import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
  */
 export const getCart = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
-  
+
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Authentication required' } });
     return;
@@ -60,7 +60,7 @@ export const getCart = asyncHandler(async (req: RequestWithAuth, res: Response) 
  */
 export const addItem = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
-  
+
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Authentication required' } });
     return;
@@ -96,7 +96,7 @@ export const addItem = asyncHandler(async (req: RequestWithAuth, res: Response) 
  */
 export const updateItem = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
-  
+
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Authentication required' } });
     return;
@@ -136,7 +136,7 @@ export const updateItem = asyncHandler(async (req: RequestWithAuth, res: Respons
  */
 export const removeItem = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
-  
+
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Authentication required' } });
     return;
@@ -174,7 +174,7 @@ export const removeItem = asyncHandler(async (req: RequestWithAuth, res: Respons
  */
 export const clearCart = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
-  
+
   if (!req.user) {
     res.status(401).json({ success: false, error: { message: 'Authentication required' } });
     return;
@@ -206,7 +206,7 @@ export const clearCart = asyncHandler(async (req: RequestWithAuth, res: Response
  */
 export const transferCart = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
-  
+
   // req.user is already set by requireAuth middleware in the route
   if (!req.user) {
     res.status(401).json({
@@ -247,7 +247,11 @@ export const transferCart = asyncHandler(async (req: RequestWithAuth, res: Respo
 
   console.log('[CART TRANSFER] Created headers:', JSON.stringify(headers, null, 2));
 
-  logger.debug('Cart transfer headers', { headers, userId: req.user.id, hasAuth: !!req.headers.authorization });
+  logger.debug('Cart transfer headers', {
+    headers,
+    userId: req.user.id,
+    hasAuth: !!req.headers.authorization,
+  });
 
   console.log('[CART TRANSFER] Calling cartClient.transferCart...');
   const response = await cartClient.transferCart(guestId, headers);
