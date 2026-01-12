@@ -199,8 +199,8 @@ export const getMyOrdersPaged = async (
     }
 
     const params = {
-      page: req.query.page || '1',
-      pageSize: req.query.pageSize || '10',
+      page: String(req.query.page || '1'),
+      pageSize: String(req.query.pageSize || '10'),
     };
 
     const pagedOrders = await orderClient.getMyOrdersPaged(auth.userId, headers, params);

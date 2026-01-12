@@ -5,15 +5,24 @@
 
 import { Response } from 'express';
 import { asyncHandler } from '@middleware/asyncHandler.middleware';
-import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
+import { RequestWithAuth } from '@middleware/auth.middleware';
 import { reviewClient } from '@clients/review.client';
 import logger from '@/core/logger';
+
+// Response interface for type safety
+interface ReviewResponse {
+  data?: {
+    id?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
 
 /**
  * POST /api/reviews
  * Create a new review
  */
-export const createReview = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const createReview = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const reviewData = req.body;
 
@@ -21,15 +30,15 @@ export const createReview = asyncHandler(async (req: RequestWithTraceContext, re
     traceId,
     spanId,
     productId: reviewData.productId,
-    userId: req.user?.sub,
+    userId: req.user?.id,
   });
 
   // Add user information from auth context
   const enrichedData = {
     ...reviewData,
-    userId: req.user?.sub,
+    userId: req.user?.id,
     userEmail: req.user?.email || reviewData.email,
-    userName: req.user?.name || reviewData.author,
+    userName: req.user?.username || reviewData.author,
   };
 
   const headers = {
@@ -38,7 +47,7 @@ export const createReview = asyncHandler(async (req: RequestWithTraceContext, re
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
-  const result = await reviewClient.createReview(enrichedData, headers);
+  const result = (await reviewClient.createReview(enrichedData, headers)) as ReviewResponse;
 
   logger.info('Review created successfully', {
     traceId,
@@ -56,7 +65,7 @@ export const createReview = asyncHandler(async (req: RequestWithTraceContext, re
  * PUT /api/reviews/:id
  * Update an existing review
  */
-export const updateReview = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const updateReview = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
   const reviewData = req.body;
@@ -65,7 +74,7 @@ export const updateReview = asyncHandler(async (req: RequestWithTraceContext, re
     traceId,
     spanId,
     reviewId: id,
-    userId: req.user?.sub,
+    userId: req.user?.id,
   });
 
   const headers = {
@@ -74,7 +83,7 @@ export const updateReview = asyncHandler(async (req: RequestWithTraceContext, re
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
-  const result = await reviewClient.updateReview(id, reviewData, headers);
+  const result = (await reviewClient.updateReview(id, reviewData, headers)) as ReviewResponse;
 
   logger.info('Review updated successfully', {
     traceId,
@@ -92,7 +101,7 @@ export const updateReview = asyncHandler(async (req: RequestWithTraceContext, re
  * DELETE /api/reviews/:id
  * Delete a review
  */
-export const deleteReview = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const deleteReview = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -100,7 +109,7 @@ export const deleteReview = asyncHandler(async (req: RequestWithTraceContext, re
     traceId,
     spanId,
     reviewId: id,
-    userId: req.user?.sub,
+    userId: req.user?.id,
   });
 
   const headers = {

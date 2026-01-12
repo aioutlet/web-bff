@@ -96,7 +96,15 @@ export async function getProductReviews(
       sort,
     });
 
-    const response = await reviewClient.getProductReviewsList(
+    // Response type for type safety
+    interface ReviewListResponse {
+      data?: {
+        reviews?: ReviewData[];
+        total?: number;
+      };
+    }
+
+    const response = (await reviewClient.getProductReviewsList(
       productId,
       {
         status: 'approved',
@@ -107,7 +115,7 @@ export async function getProductReviews(
       {
         traceparent: `00-${traceId}-${spanId}-01`,
       }
-    );
+    )) as ReviewListResponse;
 
     const reviews = response.data?.reviews || [];
     const total = response.data?.total || 0;

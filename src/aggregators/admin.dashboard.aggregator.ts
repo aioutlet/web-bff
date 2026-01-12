@@ -61,6 +61,61 @@ export interface RecentUser {
   createdAt: string;
 }
 
+// Interfaces for service response data
+interface UserStatsResponse {
+  total?: number;
+  active?: number;
+  newThisMonth?: number;
+  growth?: number;
+  recentUsers?: RecentUser[];
+}
+
+interface OrderStatsResponse {
+  total?: number;
+  pending?: number;
+  processing?: number;
+  completed?: number;
+  revenue?: number;
+  growth?: number;
+  recentOrders?: Array<{
+    id: string;
+    orderNumber: string;
+    customerName?: string;
+    customerId?: string;
+    totalAmount: number;
+    status: string;
+    itemCount?: number;
+    createdAt: string;
+  }>;
+}
+
+interface ProductStatsResponse {
+  total?: number;
+  active?: number;
+}
+
+interface InventoryStatsResponse {
+  productsWithStock?: number;
+  lowStockCount?: number;
+  outOfStockCount?: number;
+  totalInventoryValue?: number;
+  totalUnits?: number;
+  totalItems?: number;
+}
+
+interface ReviewStatsResponse {
+  data?: {
+    total?: number;
+    pending?: number;
+    averageRating?: number;
+    growth?: number;
+  };
+  total?: number;
+  pending?: number;
+  averageRating?: number;
+  growth?: number;
+}
+
 export class AdminDashboardAggregator {
   /**
    * Aggregates dashboard statistics from multiple microservices
@@ -139,25 +194,27 @@ export class AdminDashboardAggregator {
 
     try {
       // Process user stats
-      const userStatsData =
+      const userStatsData: UserStatsResponse =
         userStats.status === 'fulfilled'
-          ? userStats.value
+          ? (userStats.value as UserStatsResponse)
           : { total: 0, active: 0, newThisMonth: 0, growth: 0 };
 
       // Process order stats
-      const orderStatsData =
+      const orderStatsData: OrderStatsResponse =
         orderStats.status === 'fulfilled'
-          ? orderStats.value
+          ? (orderStats.value as OrderStatsResponse)
           : { total: 0, pending: 0, processing: 0, completed: 0, revenue: 0, growth: 0 };
 
       // Process product stats
-      const productStatsData =
-        productStats.status === 'fulfilled' ? productStats.value : { total: 0, active: 0 };
+      const productStatsData: ProductStatsResponse =
+        productStats.status === 'fulfilled'
+          ? (productStats.value as ProductStatsResponse)
+          : { total: 0, active: 0 };
 
       // Process inventory stats
-      const inventoryStatsData =
+      const inventoryStatsData: InventoryStatsResponse =
         inventoryStats.status === 'fulfilled'
-          ? inventoryStats.value
+          ? (inventoryStats.value as InventoryStatsResponse)
           : {
               productsWithStock: 0,
               lowStockCount: 0,
@@ -168,10 +225,15 @@ export class AdminDashboardAggregator {
             };
 
       // Process review stats
-      const reviewStatsData =
-        reviewStats.status === 'fulfilled'
-          ? reviewStats.value?.data || reviewStats.value
-          : { total: 0, pending: 0, averageRating: 0, growth: 0 };
+      const reviewStatsRaw =
+        reviewStats.status === 'fulfilled' ? (reviewStats.value as ReviewStatsResponse) : null;
+      const reviewStatsData = reviewStatsRaw?.data ||
+        reviewStatsRaw || {
+          total: 0,
+          pending: 0,
+          averageRating: 0,
+          growth: 0,
+        };
 
       // Aggregate the stats from different services
       const aggregatedStats: DashboardStats & {
@@ -216,20 +278,10 @@ export class AdminDashboardAggregator {
       if (includeRecent) {
         // Map recent orders from order service response
         if (orderStatsData.recentOrders && Array.isArray(orderStatsData.recentOrders)) {
-          interface OrderData {
-            id: string;
-            orderNumber: string;
-            customerName?: string;
-            customerId?: string;
-            totalAmount: number;
-            status: string;
-            itemCount?: number;
-            createdAt: string;
-          }
-          aggregatedStats.recentOrders = orderStatsData.recentOrders.map((order: OrderData) => ({
+          aggregatedStats.recentOrders = orderStatsData.recentOrders.map((order) => ({
             id: order.id,
             orderNumber: order.orderNumber,
-            customer: order.customerName || order.customerId,
+            customer: order.customerName || order.customerId || '',
             total: order.totalAmount,
             status: order.status.toLowerCase(), // Already a string from backend
             itemCount: order.itemCount || 0,

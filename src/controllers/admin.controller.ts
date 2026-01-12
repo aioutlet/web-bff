@@ -5,9 +5,41 @@
  */
 
 import { Response } from 'express';
-import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
+import { RequestWithAuth } from '@middleware/auth.middleware';
 import { asyncHandler } from '@middleware/asyncHandler.middleware';
 import { adminDashboardAggregator } from '../aggregators/admin.dashboard.aggregator';
+
+// Response interfaces for type safety
+interface ProductsResponse {
+  products?: unknown[];
+  total_count?: number;
+}
+
+interface ReviewsResponse {
+  data?: unknown[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+interface ReviewStatsResponse {
+  data?: unknown;
+}
+
+interface ReviewResponse {
+  data?: unknown;
+}
+
+interface OrdersPagedResponse {
+  items?: unknown[];
+  page?: number;
+  pageSize?: number;
+  totalItems?: number;
+  totalPages?: number;
+}
 
 // ============================================================================
 // Dashboard Controllers
@@ -18,43 +50,41 @@ import { adminDashboardAggregator } from '../aggregators/admin.dashboard.aggrega
  * Aggregates stats from multiple microservices via dedicated aggregator
  * Optionally includes recent orders and users
  */
-export const getDashboardStats = asyncHandler(
-  async (req: RequestWithTraceContext, res: Response) => {
-    const { traceId, spanId } = req;
-    const includeRecent = req.query.includeRecent === 'true';
-    const recentLimit = parseInt(req.query.recentLimit as string) || 10;
+export const getDashboardStats = asyncHandler(async (req: RequestWithAuth, res: Response) => {
+  const { traceId, spanId } = req;
+  const includeRecent = req.query.includeRecent === 'true';
+  const recentLimit = parseInt(req.query.recentLimit as string) || 10;
 
-    // logger.info('[BFF] Dashboard stats endpoint called', {
-    //   traceId,
-    //   spanId,
-    //   includeRecent,
-    //   recentLimit,
-    //   timestamp: new Date().toISOString(),
-    // });
+  // logger.info('[BFF] Dashboard stats endpoint called', {
+  //   traceId,
+  //   spanId,
+  //   includeRecent,
+  //   recentLimit,
+  //   timestamp: new Date().toISOString(),
+  // });
 
-    const authHeaders = {
-      authorization: req.get('authorization') || '',
-    };
+  const authHeaders = {
+    authorization: req.get('authorization') || '',
+  };
 
-    const stats = await adminDashboardAggregator.getDashboardStats(traceId, spanId, authHeaders, {
-      includeRecent,
-      recentLimit,
-    });
+  const stats = await adminDashboardAggregator.getDashboardStats(traceId, spanId, authHeaders, {
+    includeRecent,
+    recentLimit,
+  });
 
-    // logger.info('[BFF] Dashboard stats completed successfully', { traceId, spanId });
+  // logger.info('[BFF] Dashboard stats completed successfully', { traceId, spanId });
 
-    res.json({
-      success: true,
-      data: stats,
-    });
-  }
-);
+  res.json({
+    success: true,
+    data: stats,
+  });
+});
 
 // ============================================================================
 // User Management Controllers
 // ============================================================================
 
-export const getAllUsers = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getAllUsers = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -71,7 +101,7 @@ export const getAllUsers = asyncHandler(async (req: RequestWithTraceContext, res
   });
 });
 
-export const getUserById = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getUserById = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -89,7 +119,7 @@ export const getUserById = asyncHandler(async (req: RequestWithTraceContext, res
   });
 });
 
-export const createUser = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const createUser = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -106,7 +136,7 @@ export const createUser = asyncHandler(async (req: RequestWithTraceContext, res:
   });
 });
 
-export const updateUser = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const updateUser = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -124,7 +154,7 @@ export const updateUser = asyncHandler(async (req: RequestWithTraceContext, res:
   });
 });
 
-export const deleteUser = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const deleteUser = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -143,7 +173,7 @@ export const deleteUser = asyncHandler(async (req: RequestWithTraceContext, res:
 // Product Management Controllers
 // ============================================================================
 
-export const getAllProducts = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getAllProducts = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -151,22 +181,35 @@ export const getAllProducts = asyncHandler(async (req: RequestWithTraceContext, 
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
+  // Convert ParsedQs to Record<string, string>
+  const queryParams: Record<string, string> = {};
+  for (const [key, value] of Object.entries(req.query)) {
+    if (typeof value === 'string') {
+      queryParams[key] = value;
+    } else if (Array.isArray(value) && value.length > 0) {
+      queryParams[key] = String(value[0]);
+    }
+  }
+
   const { productClient } = await import('../clients/product.client');
-  const products = await productClient.getAllProducts(authHeaders, req.query);
+  const products = (await productClient.getAllProducts(
+    authHeaders,
+    queryParams
+  )) as ProductsResponse;
 
   res.json({
     success: true,
     data: products.products || [],
     pagination: {
       page: 1,
-      limit: req.query.limit || 20,
+      limit: queryParams.limit || 20,
       total: products.total_count || 0,
-      totalPages: Math.ceil((products.total_count || 0) / (Number(req.query.limit) || 20)),
+      totalPages: Math.ceil((products.total_count || 0) / (Number(queryParams.limit) || 20)),
     },
   });
 });
 
-export const getProductById = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getProductById = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -184,7 +227,7 @@ export const getProductById = asyncHandler(async (req: RequestWithTraceContext, 
   });
 });
 
-export const createProduct = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const createProduct = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -201,7 +244,7 @@ export const createProduct = asyncHandler(async (req: RequestWithTraceContext, r
   });
 });
 
-export const updateProduct = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const updateProduct = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -219,7 +262,7 @@ export const updateProduct = asyncHandler(async (req: RequestWithTraceContext, r
   });
 });
 
-export const deleteProduct = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const deleteProduct = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -238,7 +281,7 @@ export const deleteProduct = asyncHandler(async (req: RequestWithTraceContext, r
 // Review Management Controllers
 // ============================================================================
 
-export const getAllReviews = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getAllReviews = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -246,8 +289,18 @@ export const getAllReviews = asyncHandler(async (req: RequestWithTraceContext, r
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
+  // Convert ParsedQs to Record<string, string>
+  const queryParams: Record<string, string> = {};
+  for (const [key, value] of Object.entries(req.query)) {
+    if (typeof value === 'string') {
+      queryParams[key] = value;
+    } else if (Array.isArray(value) && value.length > 0) {
+      queryParams[key] = String(value[0]);
+    }
+  }
+
   const { reviewClient } = await import('../clients/review.client');
-  const reviews = await reviewClient.getAllReviews(authHeaders, req.query);
+  const reviews = (await reviewClient.getAllReviews(authHeaders, queryParams)) as ReviewsResponse;
 
   res.json({
     success: true,
@@ -261,7 +314,7 @@ export const getAllReviews = asyncHandler(async (req: RequestWithTraceContext, r
   });
 });
 
-export const getReviewStats = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getReviewStats = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -270,7 +323,7 @@ export const getReviewStats = asyncHandler(async (req: RequestWithTraceContext, 
   };
 
   const { reviewClient } = await import('../clients/review.client');
-  const stats = await reviewClient.getDashboardStats(authHeaders);
+  const stats = (await reviewClient.getDashboardStats(authHeaders)) as ReviewStatsResponse;
 
   res.json({
     success: true,
@@ -278,7 +331,7 @@ export const getReviewStats = asyncHandler(async (req: RequestWithTraceContext, 
   });
 });
 
-export const getReviewById = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getReviewById = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -288,7 +341,7 @@ export const getReviewById = asyncHandler(async (req: RequestWithTraceContext, r
   };
 
   const { reviewClient } = await import('../clients/review.client');
-  const review = await reviewClient.getReviewById(id, authHeaders);
+  const review = (await reviewClient.getReviewById(id, authHeaders)) as ReviewResponse;
 
   res.json({
     success: true,
@@ -296,7 +349,7 @@ export const getReviewById = asyncHandler(async (req: RequestWithTraceContext, r
   });
 });
 
-export const updateReview = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const updateReview = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -306,7 +359,7 @@ export const updateReview = asyncHandler(async (req: RequestWithTraceContext, re
   };
 
   const { reviewClient } = await import('../clients/review.client');
-  const review = await reviewClient.updateReview(id, req.body, authHeaders);
+  const review = (await reviewClient.updateReview(id, req.body, authHeaders)) as ReviewResponse;
 
   res.json({
     success: true,
@@ -314,7 +367,7 @@ export const updateReview = asyncHandler(async (req: RequestWithTraceContext, re
   });
 });
 
-export const deleteReview = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const deleteReview = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -329,30 +382,31 @@ export const deleteReview = asyncHandler(async (req: RequestWithTraceContext, re
   res.status(204).send();
 });
 
-export const bulkDeleteReviews = asyncHandler(
-  async (req: RequestWithTraceContext, res: Response) => {
-    const { traceId, spanId } = req;
+export const bulkDeleteReviews = asyncHandler(async (req: RequestWithAuth, res: Response) => {
+  const { traceId, spanId } = req;
 
-    const authHeaders = {
-      authorization: req.get('authorization') || '',
-      traceparent: `00-${traceId}-${spanId}-01`,
-    };
+  const authHeaders = {
+    authorization: req.get('authorization') || '',
+    traceparent: `00-${traceId}-${spanId}-01`,
+  };
 
-    const { reviewClient } = await import('../clients/review.client');
-    const result = await reviewClient.bulkDeleteReviews(req.body.reviewIds, authHeaders);
+  const { reviewClient } = await import('../clients/review.client');
+  const result = (await reviewClient.bulkDeleteReviews(
+    req.body.reviewIds,
+    authHeaders
+  )) as ReviewResponse;
 
-    res.json({
-      success: true,
-      data: result.data || result,
-    });
-  }
-);
+  res.json({
+    success: true,
+    data: result.data || result,
+  });
+});
 
 // ============================================================================
 // Order Management Controllers
 // ============================================================================
 
-export const getAllOrders = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getAllOrders = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -369,7 +423,7 @@ export const getAllOrders = asyncHandler(async (req: RequestWithTraceContext, re
   });
 });
 
-export const getOrdersPaged = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getOrdersPaged = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
 
   const authHeaders = {
@@ -377,8 +431,21 @@ export const getOrdersPaged = asyncHandler(async (req: RequestWithTraceContext, 
     traceparent: `00-${traceId}-${spanId}-01`,
   };
 
+  // Convert ParsedQs to Record<string, string>
+  const queryParams: Record<string, string> = {};
+  for (const [key, value] of Object.entries(req.query)) {
+    if (typeof value === 'string') {
+      queryParams[key] = value;
+    } else if (Array.isArray(value) && value.length > 0) {
+      queryParams[key] = String(value[0]);
+    }
+  }
+
   const { adminClient } = await import('../clients/admin.client');
-  const orders = await adminClient.getOrdersPaged(authHeaders, req.query);
+  const orders = (await adminClient.getOrdersPaged(
+    authHeaders,
+    queryParams
+  )) as OrdersPagedResponse;
 
   res.json({
     success: true,
@@ -392,7 +459,7 @@ export const getOrdersPaged = asyncHandler(async (req: RequestWithTraceContext, 
   });
 });
 
-export const getOrderById = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const getOrderById = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 
@@ -410,27 +477,25 @@ export const getOrderById = asyncHandler(async (req: RequestWithTraceContext, re
   });
 });
 
-export const updateOrderStatus = asyncHandler(
-  async (req: RequestWithTraceContext, res: Response) => {
-    const { traceId, spanId } = req;
-    const { id } = req.params;
+export const updateOrderStatus = asyncHandler(async (req: RequestWithAuth, res: Response) => {
+  const { traceId, spanId } = req;
+  const { id } = req.params;
 
-    const authHeaders = {
-      authorization: req.get('authorization') || '',
-      traceparent: `00-${traceId}-${spanId}-01`,
-    };
+  const authHeaders = {
+    authorization: req.get('authorization') || '',
+    traceparent: `00-${traceId}-${spanId}-01`,
+  };
 
-    const { adminClient } = await import('../clients/admin.client');
-    const order = await adminClient.updateOrderStatus(id, req.body, authHeaders);
+  const { adminClient } = await import('../clients/admin.client');
+  const order = await adminClient.updateOrderStatus(id, req.body, authHeaders);
 
-    res.json({
-      success: true,
-      data: order,
-    });
-  }
-);
+  res.json({
+    success: true,
+    data: order,
+  });
+});
 
-export const deleteOrder = asyncHandler(async (req: RequestWithTraceContext, res: Response) => {
+export const deleteOrder = asyncHandler(async (req: RequestWithAuth, res: Response) => {
   const { traceId, spanId } = req;
   const { id } = req.params;
 

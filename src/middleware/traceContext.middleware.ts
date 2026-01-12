@@ -5,6 +5,7 @@ import logger from '@/core/logger';
 export interface RequestWithTraceContext extends Request {
   traceId: string;
   spanId: string;
+  correlationId?: string;
   logger: ReturnType<typeof logger.child>;
 }
 

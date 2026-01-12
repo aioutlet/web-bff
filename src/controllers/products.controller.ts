@@ -22,6 +22,13 @@ interface Product {
   [key: string]: unknown;
 }
 
+// Response type from product service
+interface ProductsResponse {
+  products?: Product[];
+  total_count?: number;
+  [key: string]: unknown;
+}
+
 /**
  * GET /api/products
  * List products with hierarchical filtering
@@ -67,9 +74,9 @@ export const getProducts = asyncHandler(async (req: RequestWithTraceContext, res
 
   // Call product-service using Dapr client
   // Products already include review_aggregates
-  const response = await productClient.getProducts(params, {
+  const response = (await productClient.getProducts(params, {
     'X-Correlation-Id': req.correlationId || 'no-correlation',
-  });
+  })) as ProductsResponse;
 
   // Enrich products with inventory data
   const products = response.products || [];
@@ -108,6 +115,14 @@ export const getProducts = asyncHandler(async (req: RequestWithTraceContext, res
 
         // Enrich each product with inventory data
         products.forEach((product: Product) => {
+          if (!product.sku) {
+            product.inventory = {
+              inStock: false,
+              availableQuantity: 0,
+              status: 'out_of_stock',
+            };
+            return;
+          }
           const inventory = inventoryMap.get(product.sku);
           if (inventory) {
             product.inventory = {
@@ -163,12 +178,13 @@ export const searchProducts = asyncHandler(async (req: RequestWithTraceContext, 
   } = req.query;
 
   if (!q) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       error: {
         message: 'Search query (q) is required',
       },
     });
+    return;
   }
 
   logger.info('Searching products', {
@@ -195,9 +211,9 @@ export const searchProducts = asyncHandler(async (req: RequestWithTraceContext, 
   params.limit = limit as string;
 
   // Call product-service using Dapr client
-  const response = await productClient.searchProducts(params, {
+  const response = (await productClient.searchProducts(params, {
     'X-Correlation-Id': req.correlationId || 'no-correlation',
-  });
+  })) as ProductsResponse;
 
   // Enrich products with inventory data
   const products = response.products || [];
@@ -231,6 +247,14 @@ export const searchProducts = asyncHandler(async (req: RequestWithTraceContext, 
         const inventoryMap = new Map(inventoryData.map((item) => [item.sku, item]));
 
         products.forEach((product: Product) => {
+          if (!product.sku) {
+            product.inventory = {
+              inStock: false,
+              availableQuantity: 0,
+              status: 'out_of_stock',
+            };
+            return;
+          }
           const inventory = inventoryMap.get(product.sku);
           if (inventory) {
             product.inventory = {
@@ -260,7 +284,7 @@ export const searchProducts = asyncHandler(async (req: RequestWithTraceContext, 
   }
 
   // Products already include review_aggregates
-  return res.json({
+  res.json({
     success: true,
     data: response,
   });
@@ -280,9 +304,9 @@ export const getProductById = asyncHandler(async (req: RequestWithTraceContext, 
   });
 
   // Product already includes review_aggregates from product service
-  const product = await productClient.getProductDetailsById(id, {
+  const product = (await productClient.getProductDetailsById(id, {
     'X-Correlation-Id': req.correlationId || 'no-correlation',
-  });
+  })) as Product | null;
 
   // Enrich with inventory data
   if (product && product.sku) {

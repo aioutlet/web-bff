@@ -11,42 +11,40 @@ interface LogInfo {
   spanId?: string;
   [key: string]: unknown;
 }
-const consoleFormat = printf(
-  ({ level, message, timestamp, traceId, spanId, ...metadata }: LogInfo) => {
-    // Remove color codes from level for uppercase conversion
-    // eslint-disable-next-line no-control-regex
-    const cleanLevel = level.replace(/\u001b\[\d+m/g, '');
-    let msg = `${timestamp} [${cleanLevel.toUpperCase()}]`;
+const consoleFormat = printf((info) => {
+  const { level, message, timestamp, traceId, spanId, ...metadata } = info as LogInfo;
+  // Remove color codes from level for uppercase conversion
+  // eslint-disable-next-line no-control-regex
+  const cleanLevel = level.replace(/\u001b\[\d+m/g, '');
+  let msg = `${timestamp} [${cleanLevel.toUpperCase()}]`;
 
-    // W3C Trace Context
-    if (traceId && spanId) {
-      msg += ` [${traceId.substring(0, 8)}...${spanId}]`;
-    }
-
-    msg += `: ${message}`;
-
-    const metaStr = Object.keys(metadata).length ? JSON.stringify(metadata, null, 2) : '';
-    if (metaStr) {
-      msg += ` ${metaStr}`;
-    }
-
-    return msg;
+  // W3C Trace Context
+  if (traceId && spanId) {
+    msg += ` [${traceId.substring(0, 8)}...${spanId}]`;
   }
-);
+
+  msg += `: ${message}`;
+
+  const metaStr = Object.keys(metadata).length ? JSON.stringify(metadata, null, 2) : '';
+  if (metaStr) {
+    msg += ` ${metaStr}`;
+  }
+
+  return msg;
+});
 
 // JSON format for production
-const jsonFormat = printf(
-  ({ level, message, timestamp, traceId, spanId, ...metadata }: LogInfo) => {
-    return JSON.stringify({
-      timestamp,
-      level,
-      message,
-      traceId,
-      spanId,
-      ...metadata,
-    });
-  }
-);
+const jsonFormat = printf((info) => {
+  const { level, message, timestamp, traceId, spanId, ...metadata } = info as LogInfo;
+  return JSON.stringify({
+    timestamp,
+    level,
+    message,
+    traceId,
+    spanId,
+    ...metadata,
+  });
+});
 
 // Determine format based on environment
 const logFormat =

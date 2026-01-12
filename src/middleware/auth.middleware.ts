@@ -27,6 +27,14 @@ export interface RequestWithAuth extends RequestWithTraceContext {
 let jwtConfigCache: { secret: string; algorithm: string; issuer: string; audience: string } | null =
   null;
 
+// Interface for JWT config response from auth service
+interface JwtConfigResponse {
+  secret: string;
+  algorithm?: string;
+  issuer?: string;
+  audience?: string;
+}
+
 /**
  * Get JWT configuration from auth service
  */
@@ -42,7 +50,7 @@ async function getJwtConfig(): Promise<{
 
   try {
     // Get JWT secret from auth service via Dapr
-    const secretStoreResponse = await daprClient.invokeService(
+    const secretStoreResponse = await daprClient.invokeService<JwtConfigResponse>(
       config.services.auth,
       'api/auth/config/jwt',
       HttpMethod.GET,
