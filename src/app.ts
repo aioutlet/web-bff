@@ -28,7 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Custom middleware
-app.use(traceContextMiddleware as any); // W3C Trace Context
+app.use(traceContextMiddleware as express.RequestHandler); // W3C Trace Context
 
 // API routes
 app.use('/', homeRoutes);
@@ -46,6 +46,6 @@ app.use('*', (_req, res) => {
 });
 
 // Error handling middleware (must be last)
-app.use(errorMiddleware as any);
+app.use(errorMiddleware as express.ErrorRequestHandler);
 
 export default app;

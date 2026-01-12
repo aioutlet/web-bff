@@ -15,11 +15,23 @@ router.post('/register', authController.register as unknown as RequestHandler);
 router.post('/refresh', authController.refreshToken as unknown as RequestHandler);
 
 // Protected Authentication Routes (require auth)
-router.post('/logout', requireAuth as any, authController.logout as unknown as RequestHandler);
+router.post(
+  '/logout',
+  requireAuth as unknown as RequestHandler,
+  authController.logout as unknown as RequestHandler
+);
 
 // User Info Routes (require auth)
-router.get('/me', requireAuth as any, authController.getCurrentUser as unknown as RequestHandler);
-router.get('/verify', requireAuth as any, authController.verifyToken as unknown as RequestHandler);
+router.get(
+  '/me',
+  requireAuth as unknown as RequestHandler,
+  authController.getCurrentUser as unknown as RequestHandler
+);
+router.get(
+  '/verify',
+  requireAuth as unknown as RequestHandler,
+  authController.verifyToken as unknown as RequestHandler
+);
 
 // Email Verification Routes
 router.get('/email/verify', authController.verifyEmail as unknown as RequestHandler);
@@ -30,7 +42,7 @@ router.post('/password/forgot', authController.forgotPassword as unknown as Requ
 router.post('/password/reset', authController.resetPassword as unknown as RequestHandler); // Public (uses token from email)
 router.post(
   '/password/change',
-  requireAuth as any,
+  requireAuth as unknown as RequestHandler,
   authController.changePassword as unknown as RequestHandler
 ); // Protected
 

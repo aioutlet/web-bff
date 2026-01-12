@@ -34,10 +34,11 @@ router.post('/batch', async (req: Request, res: Response) => {
       success: true,
       data: inventoryData,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     logger.error('[Inventory] Error fetching batch inventory', {
-      error: error.message,
-      stack: error.stack,
+      error: err.message,
+      stack: err.stack,
       correlationId: req.headers['x-correlation-id'],
     });
 
@@ -66,9 +67,10 @@ router.get('/:sku', async (req: Request, res: Response) => {
       success: true,
       data: inventory,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     logger.error('[Inventory] Error fetching inventory', {
-      error: error.message,
+      error: err.message,
       sku: req.params.sku,
       correlationId: req.headers['x-correlation-id'],
     });

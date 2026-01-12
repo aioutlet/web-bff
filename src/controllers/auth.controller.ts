@@ -132,18 +132,19 @@ export const getCurrentUser = async (
     });
 
     res.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { traceId, spanId } = req;
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     logger.error('Get current user error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to get user',
+        message: err.response?.data?.message || 'Failed to get user',
       },
     });
   }
@@ -306,18 +307,19 @@ export const changePassword = async (
     });
 
     res.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { traceId, spanId } = req;
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     logger.error('Password change error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Password change failed',
+        message: err.response?.data?.message || 'Password change failed',
       },
     });
   }

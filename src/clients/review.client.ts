@@ -44,24 +44,32 @@ export class ReviewClient extends DaprBaseClient {
       sort?: string;
     },
     headers?: Record<string, string>
-  ): Promise<any> {
-    const queryString = params ? '?' + new URLSearchParams(params as any).toString() : '';
-    return this.get<any>(`/api/reviews/product/${productId}${queryString}`, headers);
+  ): Promise<unknown> {
+    const queryString = params
+      ? '?' + new URLSearchParams(params as Record<string, string>).toString()
+      : '';
+    return this.get<unknown>(`/api/reviews/product/${productId}${queryString}`, headers);
   }
 
-  async getProductRating(productId: string, headers?: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/reviews/products/${productId}/rating`, headers);
+  async getProductRating(productId: string, headers?: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`/api/reviews/products/${productId}/rating`, headers);
   }
 
   // Review CRUD operations
-  async createReview(data: any, headers?: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/reviews', data, headers);
+  async createReview(
+    data: Record<string, unknown>,
+    headers?: Record<string, string>
+  ): Promise<unknown> {
+    return this.post<unknown>('/api/reviews', data, headers);
   }
 
   // Admin methods
-  async getAllReviews(headers: Record<string, string>, params?: any): Promise<any> {
+  async getAllReviews(
+    headers: Record<string, string>,
+    params?: Record<string, string>
+  ): Promise<unknown> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/admin/reviews/all${queryString}`, headers);
+    return this.get<unknown>(`/api/admin/reviews/all${queryString}`, headers);
   }
 
   /**
@@ -75,7 +83,7 @@ export class ReviewClient extends DaprBaseClient {
       recentLimit?: number;
       analyticsPeriod?: string;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = new URLSearchParams();
     if (options?.includeRecent) params.append('includeRecent', 'true');
     if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
@@ -86,23 +94,27 @@ export class ReviewClient extends DaprBaseClient {
       ? `/api/admin/reviews/stats?${queryString}`
       : '/api/admin/reviews/stats';
 
-    return this.get<any>(endpoint, headers);
+    return this.get<unknown>(endpoint, headers);
   }
 
-  async getReviewById(reviewId: string, headers: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/reviews/${reviewId}`, headers);
+  async getReviewById(reviewId: string, headers: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`/api/reviews/${reviewId}`, headers);
   }
 
-  async updateReview(reviewId: string, data: any, headers: Record<string, string>): Promise<any> {
-    return this.put<any>(`/api/reviews/${reviewId}`, data, headers);
+  async updateReview(
+    reviewId: string,
+    data: Record<string, unknown>,
+    headers: Record<string, string>
+  ): Promise<unknown> {
+    return this.put<unknown>(`/api/reviews/${reviewId}`, data, headers);
   }
 
   async deleteReview(reviewId: string, headers: Record<string, string>): Promise<void> {
     return this.delete<void>(`/api/reviews/${reviewId}`, headers);
   }
 
-  async bulkDeleteReviews(reviewIds: string[], headers: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/reviews/admin/bulk-delete', { reviewIds }, headers);
+  async bulkDeleteReviews(reviewIds: string[], headers: Record<string, string>): Promise<unknown> {
+    return this.post<unknown>('/api/reviews/admin/bulk-delete', { reviewIds }, headers);
   }
 }
 

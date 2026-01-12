@@ -4,7 +4,7 @@ declare global {
       correlationId?: string;
       user?: {
         id: string;
-        [key: string]: any;
+        [key: string]: unknown;
       };
     }
   }

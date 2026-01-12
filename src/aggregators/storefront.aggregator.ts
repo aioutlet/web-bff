@@ -69,8 +69,15 @@ export class StorefrontAggregator {
         }
 
         // Map to EnrichedProduct format
+        interface ProductWithReviews {
+          review_aggregates?: {
+            average_rating?: number;
+            total_review_count?: number;
+          };
+        }
         enrichedProducts = trending_products.map((product) => {
           const inventory = product.sku ? inventoryMap.get(product.sku) : undefined;
+          const productWithReviews = product as typeof product & ProductWithReviews;
 
           return {
             id: product.id,
@@ -86,8 +93,8 @@ export class StorefrontAggregator {
               availableQuantity: inventory?.quantityAvailable || 0,
             },
             reviews: {
-              averageRating: (product as any).review_aggregates?.average_rating || 0,
-              reviewCount: (product as any).review_aggregates?.total_review_count || 0,
+              averageRating: productWithReviews.review_aggregates?.average_rating || 0,
+              reviewCount: productWithReviews.review_aggregates?.total_review_count || 0,
             },
           };
         });

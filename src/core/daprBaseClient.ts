@@ -18,7 +18,7 @@ export class DaprBaseClient {
   private async daprRequest<T>(
     method: string,
     url: string,
-    data?: any,
+    data?: unknown,
     headers?: Record<string, string>
   ): Promise<T> {
     const methodMap: Record<string, HttpMethod> = {
@@ -64,21 +64,33 @@ export class DaprBaseClient {
   /**
    * POST request via Dapr
    */
-  protected async post<T>(url: string, data?: any, headers?: Record<string, string>): Promise<T> {
+  protected async post<T>(
+    url: string,
+    data?: unknown,
+    headers?: Record<string, string>
+  ): Promise<T> {
     return this.daprRequest<T>('POST', url, data, headers);
   }
 
   /**
    * PUT request via Dapr
    */
-  protected async put<T>(url: string, data?: any, headers?: Record<string, string>): Promise<T> {
+  protected async put<T>(
+    url: string,
+    data?: unknown,
+    headers?: Record<string, string>
+  ): Promise<T> {
     return this.daprRequest<T>('PUT', url, data, headers);
   }
 
   /**
    * PATCH request via Dapr
    */
-  protected async patch<T>(url: string, data?: any, headers?: Record<string, string>): Promise<T> {
+  protected async patch<T>(
+    url: string,
+    data?: unknown,
+    headers?: Record<string, string>
+  ): Promise<T> {
     return this.daprRequest<T>('PATCH', url, data, headers);
   }
 

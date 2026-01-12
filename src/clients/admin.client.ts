@@ -15,24 +15,27 @@ export class AdminClient extends DaprBaseClient {
   // User Admin Operations (admin-service → user-service)
   // ============================================================================
 
-  async getAllUsers(headers: Record<string, string>): Promise<any[]> {
-    return this.get<any[]>('/api/admin/users', headers);
+  async getAllUsers(headers: Record<string, string>): Promise<unknown[]> {
+    return this.get<unknown[]>('/api/admin/users', headers);
   }
 
-  async getUserById(userId: string, headers: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/admin/users/${userId}`, headers);
+  async getUserById(userId: string, headers: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`/api/admin/users/${userId}`, headers);
   }
 
-  async createUser(data: any, headers: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/admin/users', data, headers);
+  async createUser(
+    data: Record<string, unknown>,
+    headers: Record<string, string>
+  ): Promise<unknown> {
+    return this.post<unknown>('/api/admin/users', data, headers);
   }
 
   async updateUser(
     userId: string,
-    data: Partial<any>,
+    data: Record<string, unknown>,
     headers: Record<string, string>
-  ): Promise<any> {
-    return this.patch<any>(`/api/admin/users/${userId}`, data, headers);
+  ): Promise<unknown> {
+    return this.patch<unknown>(`/api/admin/users/${userId}`, data, headers);
   }
 
   async deleteUser(userId: string, headers: Record<string, string>): Promise<void> {
@@ -43,25 +46,30 @@ export class AdminClient extends DaprBaseClient {
   // Order Admin Operations (admin-service → order-service)
   // ============================================================================
 
-  async getAllOrders(headers: Record<string, string>): Promise<any[]> {
-    return this.get<any[]>('/api/admin/orders', headers);
+  async getAllOrders(headers: Record<string, string>): Promise<unknown[]> {
+    return this.get<unknown[]>('/api/admin/orders', headers);
   }
 
-  async getOrdersPaged(headers: Record<string, string>, params?: any): Promise<any> {
-    const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/admin/orders/paged${queryString}`, headers);
+  async getOrdersPaged(
+    headers: Record<string, string>,
+    params?: Record<string, unknown>
+  ): Promise<unknown> {
+    const queryString = params
+      ? '?' + new URLSearchParams(params as Record<string, string>).toString()
+      : '';
+    return this.get<unknown>(`/api/admin/orders/paged${queryString}`, headers);
   }
 
-  async getOrderById(orderId: string, headers: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/admin/orders/${orderId}`, headers);
+  async getOrderById(orderId: string, headers: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`/api/admin/orders/${orderId}`, headers);
   }
 
   async updateOrderStatus(
     orderId: string,
-    data: any,
+    data: Record<string, unknown>,
     headers: Record<string, string>
-  ): Promise<any> {
-    return this.put<any>(`/api/admin/orders/${orderId}/status`, data, headers);
+  ): Promise<unknown> {
+    return this.put<unknown>(`/api/admin/orders/${orderId}/status`, data, headers);
   }
 
   async deleteOrder(orderId: string, headers: Record<string, string>): Promise<void> {
@@ -74,7 +82,7 @@ export class AdminClient extends DaprBaseClient {
       includeRecent?: boolean;
       recentLimit?: number;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = new URLSearchParams();
     if (options?.includeRecent) params.append('includeRecent', 'true');
     if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
@@ -84,7 +92,7 @@ export class AdminClient extends DaprBaseClient {
       ? `/api/admin/orders/stats?${queryString}`
       : '/api/admin/orders/stats';
 
-    return this.get<any>(endpoint, headers);
+    return this.get<unknown>(endpoint, headers);
   }
 
   // TODO: Add more admin operations as needed:

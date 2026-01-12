@@ -1,5 +1,6 @@
 import { DaprBaseClient } from '../core/daprBaseClient';
 import config from '@/core/config';
+import logger from '@/core/logger';
 
 interface CartItem {
   productId: string;
@@ -81,11 +82,9 @@ class CartClient extends DaprBaseClient {
    * Transfer guest cart to authenticated user
    */
   async transferCart(guestId: string, headers: Record<string, string>): Promise<Cart> {
-    console.log('[CartClient 2025-11-19 17:15] transferCart called');
-    console.log('[CartClient] guestId:', guestId);
-    console.log('[CartClient] headers:', JSON.stringify(headers));
+    logger.debug('[CartClient] transferCart called', { guestId, headers });
     const result = await this.post<Cart>('/api/v1/cart/transfer', { guestId }, headers);
-    console.log('[CartClient] Transfer result:', result);
+    logger.debug('[CartClient] Transfer result', { result });
     return result;
   }
 

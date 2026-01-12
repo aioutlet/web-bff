@@ -11,7 +11,7 @@ import { requireAuth } from '@middleware/auth.middleware';
 const router = Router();
 
 // Apply authentication to all user routes
-router.use(requireAuth as any);
+router.use(requireAuth as unknown as RequestHandler);
 
 // Profile Routes
 router.get('/profile', userController.getProfile as unknown as RequestHandler);

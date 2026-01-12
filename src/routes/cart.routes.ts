@@ -10,22 +10,34 @@ import { requireAuth } from '@middleware/auth.middleware';
 const router = Router();
 
 // Authenticated Cart Routes (require authentication)
-router.get('/', requireAuth as any, cartController.getCart as unknown as RequestHandler);
-router.post('/items', requireAuth as any, cartController.addItem as unknown as RequestHandler);
+router.get(
+  '/',
+  requireAuth as unknown as RequestHandler,
+  cartController.getCart as unknown as RequestHandler
+);
+router.post(
+  '/items',
+  requireAuth as unknown as RequestHandler,
+  cartController.addItem as unknown as RequestHandler
+);
 router.put(
   '/items/:productId',
-  requireAuth as any,
+  requireAuth as unknown as RequestHandler,
   cartController.updateItem as unknown as RequestHandler
 );
 router.delete(
   '/items/:productId',
-  requireAuth as any,
+  requireAuth as unknown as RequestHandler,
   cartController.removeItem as unknown as RequestHandler
 );
-router.delete('/', requireAuth as any, cartController.clearCart as unknown as RequestHandler);
+router.delete(
+  '/',
+  requireAuth as unknown as RequestHandler,
+  cartController.clearCart as unknown as RequestHandler
+);
 router.post(
   '/transfer',
-  requireAuth as any,
+  requireAuth as unknown as RequestHandler,
   cartController.transferCart as unknown as RequestHandler
 );
 

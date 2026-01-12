@@ -46,7 +46,8 @@ export const getCart = asyncHandler(async (req: RequestWithAuth, res: Response) 
   const response = await cartClient.getCart(headers);
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.json({
     success: true,
@@ -82,7 +83,8 @@ export const addItem = asyncHandler(async (req: RequestWithAuth, res: Response) 
   const response = await cartClient.addItem(req.body, headers);
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.status(200).json({
     success: true,
@@ -122,7 +124,8 @@ export const updateItem = asyncHandler(async (req: RequestWithAuth, res: Respons
   const response = await cartClient.updateItem(productId, quantity, headers);
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.json({
     success: true,
@@ -160,7 +163,8 @@ export const removeItem = asyncHandler(async (req: RequestWithAuth, res: Respons
   const response = await cartClient.removeItem(productId, headers);
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.json({
     success: true,
@@ -233,10 +237,14 @@ export const transferCart = asyncHandler(async (req: RequestWithAuth, res: Respo
     guestId,
   });
 
-  console.log('[CART TRANSFER] Starting transfer process');
-  console.log('[CART TRANSFER] User ID:', req.user.id);
-  console.log('[CART TRANSFER] Guest ID:', guestId);
-  console.log('[CART TRANSFER] Has Authorization header:', !!req.headers.authorization);
+  logger.debug('[CART TRANSFER] Starting transfer process', { traceId, spanId });
+  logger.debug('[CART TRANSFER] Transfer details', {
+    traceId,
+    spanId,
+    userId: req.user.id,
+    guestId,
+    hasAuthHeader: !!req.headers.authorization,
+  });
 
   // Cart service expects X-User-ID header (case-sensitive in JAX-RS)
   const headers: Record<string, string> = {
@@ -245,20 +253,19 @@ export const transferCart = asyncHandler(async (req: RequestWithAuth, res: Respo
     'X-Correlation-ID': req.correlationId || '',
   };
 
-  console.log('[CART TRANSFER] Created headers:', JSON.stringify(headers, null, 2));
-
   logger.debug('Cart transfer headers', {
     headers,
     userId: req.user.id,
     hasAuth: !!req.headers.authorization,
   });
 
-  console.log('[CART TRANSFER] Calling cartClient.transferCart...');
+  logger.debug('[CART TRANSFER] Calling cartClient.transferCart...', { traceId, spanId });
   const response = await cartClient.transferCart(guestId, headers);
-  console.log('[CART TRANSFER] Got response:', response);
+  logger.debug('[CART TRANSFER] Got response', { traceId, spanId, hasResponse: !!response });
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.json({
     success: true,
@@ -287,7 +294,8 @@ export const getGuestCart = asyncHandler(async (req: RequestWithTraceContext, re
   const response = await cartClient.getGuestCart(guestId);
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.json({
     success: true,
@@ -313,7 +321,8 @@ export const addGuestItem = asyncHandler(async (req: RequestWithTraceContext, re
   const response = await cartClient.addGuestItem(guestId, req.body);
 
   // Extract actual cart data from cart service response
-  const cart = (response as any).data || response;
+  const cartResponse = response as { data?: unknown };
+  const cart = cartResponse.data || response;
 
   res.status(200).json({
     success: true,
@@ -345,21 +354,23 @@ export const updateGuestItem = async (
     const response = await cartClient.updateGuestItem(guestId, productId, quantity);
 
     // Extract actual cart data from cart service response
-    const cart = (response as any).data || response;
+    const cartResponse = response as { data?: unknown };
+    const cart = cartResponse.data || response;
 
     res.json({
       success: true,
       data: cart,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { traceId, spanId } = req;
+    const err = error as Error & { response?: { status?: number } };
     logger.error('Error updating guest cart item', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
         message: 'Failed to update guest cart item',
@@ -390,21 +401,23 @@ export const removeGuestItem = async (
     const response = await cartClient.removeGuestItem(guestId, productId);
 
     // Extract actual cart data from cart service response
-    const cart = (response as any).data || response;
+    const cartResponse = response as { data?: unknown };
+    const cart = cartResponse.data || response;
 
     res.json({
       success: true,
       data: cart,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { traceId, spanId } = req;
+    const err = error as Error & { response?: { status?: number } };
     logger.error('Error removing item from guest cart', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
         message: 'Failed to remove item from guest cart',
@@ -437,15 +450,16 @@ export const clearGuestCart = async (
       success: true,
       message: 'Guest cart cleared successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { traceId, spanId } = req;
+    const err = error as Error & { response?: { status?: number } };
     logger.error('Error clearing guest cart', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
         message: 'Failed to clear guest cart',

@@ -69,51 +69,54 @@ export class AuthClient extends DaprBaseClient {
     return this.post<AuthResponse>('/api/auth/token/refresh', data, headers);
   }
 
-  async getCurrentUser(token: string, headers?: Record<string, string>): Promise<any> {
+  async getCurrentUser(token: string, headers?: Record<string, string>): Promise<unknown> {
     const authHeaders = {
       ...headers,
       Authorization: `Bearer ${token}`,
     };
-    return this.get<any>('/api/auth/me', authHeaders);
+    return this.get<unknown>('/api/auth/me', authHeaders);
   }
 
-  async verifyToken(token: string, headers?: Record<string, string>): Promise<any> {
+  async verifyToken(token: string, headers?: Record<string, string>): Promise<unknown> {
     const authHeaders = {
       ...headers,
       Authorization: `Bearer ${token}`,
     };
-    return this.get<any>('/api/auth/verify', authHeaders);
+    return this.get<unknown>('/api/auth/verify', authHeaders);
   }
 
-  async verifyEmail(token: string, headers?: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/auth/email/verify?token=${token}`, headers);
+  async verifyEmail(token: string, headers?: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`/api/auth/email/verify?token=${token}`, headers);
   }
 
-  async resendVerificationEmail(email: string, headers?: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/auth/email/resend', { email }, headers);
+  async resendVerificationEmail(email: string, headers?: Record<string, string>): Promise<unknown> {
+    return this.post<unknown>('/api/auth/email/resend', { email }, headers);
   }
 
-  async forgotPassword(data: PasswordResetRequest, headers?: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/auth/password/forgot', data, headers);
+  async forgotPassword(
+    data: PasswordResetRequest,
+    headers?: Record<string, string>
+  ): Promise<unknown> {
+    return this.post<unknown>('/api/auth/password/forgot', data, headers);
   }
 
   async resetPassword(
     data: PasswordResetConfirmRequest,
     headers?: Record<string, string>
-  ): Promise<any> {
-    return this.post<any>('/api/auth/password/reset', data, headers);
+  ): Promise<unknown> {
+    return this.post<unknown>('/api/auth/password/reset', data, headers);
   }
 
   async changePassword(
     data: ChangePasswordRequest,
     token: string,
     headers?: Record<string, string>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const authHeaders = {
       ...headers,
       Authorization: `Bearer ${token}`,
     };
-    return this.post<any>('/api/auth/password/change', data, authHeaders);
+    return this.post<unknown>('/api/auth/password/change', data, authHeaders);
   }
 }
 

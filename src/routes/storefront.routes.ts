@@ -12,13 +12,13 @@ const router = Router();
 // Storefront Home Routes - with optional auth for personalization
 router.get(
   '/home',
-  optionalAuth as any,
+  optionalAuth as unknown as RequestHandler,
   storefrontController.getTrendingData as unknown as RequestHandler
 );
 
 router.get(
   '/categories',
-  optionalAuth as any,
+  optionalAuth as unknown as RequestHandler,
   storefrontController.getCategories as unknown as RequestHandler
 );
 

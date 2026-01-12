@@ -25,7 +25,10 @@ export const errorMiddleware = (
   }
 
   // Default error response
-  const statusCode = (err as any).statusCode || 500;
+  interface ErrorWithStatusCode extends Error {
+    statusCode?: number;
+  }
+  const statusCode = (err as ErrorWithStatusCode).statusCode || 500;
   const message = config.env === 'production' ? 'Internal server error' : err.message;
 
   res.status(statusCode).json({

@@ -216,7 +216,17 @@ export class AdminDashboardAggregator {
       if (includeRecent) {
         // Map recent orders from order service response
         if (orderStatsData.recentOrders && Array.isArray(orderStatsData.recentOrders)) {
-          aggregatedStats.recentOrders = orderStatsData.recentOrders.map((order: any) => ({
+          interface OrderData {
+            id: string;
+            orderNumber: string;
+            customerName?: string;
+            customerId?: string;
+            totalAmount: number;
+            status: string;
+            itemCount?: number;
+            createdAt: string;
+          }
+          aggregatedStats.recentOrders = orderStatsData.recentOrders.map((order: OrderData) => ({
             id: order.id,
             orderNumber: order.orderNumber,
             customer: order.customerName || order.customerId,
@@ -251,12 +261,13 @@ export class AdminDashboardAggregator {
       // });
 
       return aggregatedStats;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as Error;
       logger.error('Error processing dashboard stats', {
         traceId,
         spanId,
-        error: error.message,
-        stack: error.stack,
+        error: err.message,
+        stack: err.stack,
       });
 
       // Return safe defaults on error

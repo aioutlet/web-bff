@@ -80,18 +80,19 @@ export const updateProfile = async (req: RequestWithTraceContext, res: Response)
       success: true,
       data: profile,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Update user profile error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to update profile',
+        message: err.response?.data?.message || 'Failed to update profile',
       },
     });
   }
@@ -118,18 +119,19 @@ export const deleteAccount = async (req: RequestWithTraceContext, res: Response)
       success: true,
       message: 'Account deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Delete user account error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to delete account',
+        message: err.response?.data?.message || 'Failed to delete account',
       },
     });
   }
@@ -187,18 +189,19 @@ export const createAddress = async (req: RequestWithTraceContext, res: Response)
       success: true,
       data: address,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Create address error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to create address',
+        message: err.response?.data?.message || 'Failed to create address',
       },
     });
   }
@@ -233,18 +236,19 @@ export const updateAddress = async (req: RequestWithTraceContext, res: Response)
       success: true,
       data: address,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Update address error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to update address',
+        message: err.response?.data?.message || 'Failed to update address',
       },
     });
   }
@@ -274,18 +278,19 @@ export const deleteAddress = async (req: RequestWithTraceContext, res: Response)
       success: true,
       message: 'Address deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Delete address error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to delete address',
+        message: err.response?.data?.message || 'Failed to delete address',
       },
     });
   }
@@ -318,18 +323,19 @@ export const setDefaultAddress = async (
       success: true,
       data: address,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Set default address error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to set default address',
+        message: err.response?.data?.message || 'Failed to set default address',
       },
     });
   }
@@ -363,18 +369,19 @@ export const getPaymentMethods = async (
       success: true,
       data: paymentMethods,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Get payment methods error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to get payment methods',
+        message: err.response?.data?.message || 'Failed to get payment methods',
       },
     });
   }
@@ -409,18 +416,19 @@ export const createPaymentMethod = async (
       success: true,
       data: paymentMethod,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Create payment method error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to create payment method',
+        message: err.response?.data?.message || 'Failed to create payment method',
       },
     });
   }
@@ -458,18 +466,19 @@ export const updatePaymentMethod = async (
       success: true,
       data: paymentMethod,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Update payment method error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to update payment method',
+        message: err.response?.data?.message || 'Failed to update payment method',
       },
     });
   }
@@ -502,18 +511,19 @@ export const deletePaymentMethod = async (
       success: true,
       message: 'Payment method deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Delete payment method error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to delete payment method',
+        message: err.response?.data?.message || 'Failed to delete payment method',
       },
     });
   }
@@ -546,18 +556,19 @@ export const setDefaultPaymentMethod = async (
       success: true,
       data: paymentMethod,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Set default payment method error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to set default payment method',
+        message: err.response?.data?.message || 'Failed to set default payment method',
       },
     });
   }
@@ -613,18 +624,19 @@ export const addToWishlist = async (req: RequestWithTraceContext, res: Response)
       success: true,
       data: item,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Add to wishlist error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to add to wishlist',
+        message: err.response?.data?.message || 'Failed to add to wishlist',
       },
     });
   }
@@ -657,18 +669,19 @@ export const removeFromWishlist = async (
       success: true,
       message: 'Item removed from wishlist',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number; data?: { message?: string } } };
     const { traceId, spanId } = req;
     logger.error('Remove from wishlist error', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
-        message: error.response?.data?.message || 'Failed to remove from wishlist',
+        message: err.response?.data?.message || 'Failed to remove from wishlist',
       },
     });
   }

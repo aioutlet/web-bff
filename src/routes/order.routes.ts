@@ -11,7 +11,7 @@ import { requireAuth } from '@middleware/auth.middleware';
 const router = Router();
 
 // Apply authentication to all order routes
-router.use(requireAuth as any);
+router.use(requireAuth as unknown as RequestHandler);
 
 // Order Routes
 router.post('/', orderController.createOrder as unknown as RequestHandler);

@@ -70,42 +70,55 @@ export class ProductClient extends DaprBaseClient {
     return response.total_count || 0;
   }
 
-  async getProductDetailsById(productId: string, headers?: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/products/${productId}`, headers);
+  async getProductDetailsById(
+    productId: string,
+    headers?: Record<string, string>
+  ): Promise<unknown> {
+    return this.get<unknown>(`/api/products/${productId}`, headers);
   }
 
   async getProducts(
     params?: Record<string, string>,
     headers?: Record<string, string>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/products${queryString}`, headers);
+    return this.get<unknown>(`/api/products${queryString}`, headers);
   }
 
   async searchProducts(
     params?: Record<string, string>,
     headers?: Record<string, string>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/products/search${queryString}`, headers);
+    return this.get<unknown>(`/api/products/search${queryString}`, headers);
   }
 
   // Admin methods
-  async getAllProducts(headers: Record<string, string>, params?: any): Promise<any> {
+  async getAllProducts(
+    headers: Record<string, string>,
+    params?: Record<string, string>
+  ): Promise<unknown> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
-    return this.get<any>(`/api/products${queryString}`, headers);
+    return this.get<unknown>(`/api/products${queryString}`, headers);
   }
 
-  async getProductById(productId: string, headers: Record<string, string>): Promise<any> {
-    return this.get<any>(`/api/products/${productId}`, headers);
+  async getProductById(productId: string, headers: Record<string, string>): Promise<unknown> {
+    return this.get<unknown>(`/api/products/${productId}`, headers);
   }
 
-  async createProduct(data: any, headers: Record<string, string>): Promise<any> {
-    return this.post<any>('/api/products', data, headers);
+  async createProduct(
+    data: Record<string, unknown>,
+    headers: Record<string, string>
+  ): Promise<unknown> {
+    return this.post<unknown>('/api/products', data, headers);
   }
 
-  async updateProduct(productId: string, data: any, headers: Record<string, string>): Promise<any> {
-    return this.patch<any>(`/api/products/${productId}`, data, headers);
+  async updateProduct(
+    productId: string,
+    data: Record<string, unknown>,
+    headers: Record<string, string>
+  ): Promise<unknown> {
+    return this.patch<unknown>(`/api/products/${productId}`, data, headers);
   }
 
   async deleteProduct(productId: string, headers: Record<string, string>): Promise<void> {
@@ -123,7 +136,7 @@ export class ProductClient extends DaprBaseClient {
       recentLimit?: number;
       analyticsPeriod?: string;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = new URLSearchParams();
     if (options?.includeRecent) params.append('includeRecent', 'true');
     if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
@@ -134,7 +147,7 @@ export class ProductClient extends DaprBaseClient {
       ? `/api/admin/products/stats?${queryString}`
       : '/api/admin/products/stats';
 
-    return this.get<any>(endpoint, headers);
+    return this.get<unknown>(endpoint, headers);
   }
 }
 

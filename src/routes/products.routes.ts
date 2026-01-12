@@ -11,7 +11,7 @@ import { optionalAuth } from '@middleware/auth.middleware';
 const router = Router();
 
 // Apply optional authentication to all product routes
-router.use(optionalAuth as any);
+router.use(optionalAuth as unknown as RequestHandler);
 
 // Product Routes
 router.get('/categories', productsController.getCategories as unknown as RequestHandler);

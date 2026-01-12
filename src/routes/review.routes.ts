@@ -13,7 +13,7 @@ import { requireAuth } from '@middleware/auth.middleware';
 const router = Router();
 
 // Apply authentication to all review routes (customers can only manage their own reviews)
-router.use(requireAuth as any);
+router.use(requireAuth as unknown as RequestHandler);
 
 // Customer Review Routes
 router.post('/', reviewController.createReview as unknown as RequestHandler);

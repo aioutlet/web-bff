@@ -1,5 +1,6 @@
 import { DaprClient, HttpMethod, CommunicationProtocolEnum } from '@dapr/dapr';
 import config from '../core/config.js';
+import logger from './logger';
 
 interface InvokeMetadata {
   headers?: Record<string, string>;
@@ -28,11 +29,11 @@ class DaprClientService {
    * @param metadata - Additional metadata like headers (optional)
    * @returns Response data from the invoked service
    */
-  async invokeService<T = any>(
+  async invokeService<T = unknown>(
     appId: string,
     methodName: string,
     httpMethod: HttpMethod,
-    data?: any,
+    data?: unknown,
     metadata?: InvokeMetadata
   ): Promise<T> {
     try {
@@ -61,15 +62,16 @@ class DaprClientService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[Dapr] HTTP ${response.status} from ${appId}:`, errorText);
+        logger.error(`[Dapr] HTTP ${response.status} from ${appId}: ${errorText}`);
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
 
       return (await response.json()) as T;
-    } catch (error: any) {
-      console.error(`[Dapr] Service invocation failed: ${appId}/${methodName}`, {
-        error: error.message,
-        stack: error.stack,
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`[Dapr] Service invocation failed: ${appId}/${methodName}`, {
+        error: err.message,
+        stack: err.stack,
       });
       throw error;
     }
@@ -81,15 +83,16 @@ class DaprClientService {
    * @param eventData - The event payload
    * @returns Promise that resolves when the event is published
    */
-  async publishEvent(topicName: string, eventData: any): Promise<void> {
+  async publishEvent(topicName: string, eventData: unknown): Promise<void> {
     try {
       const client = this.ensureClient();
       await client.pubsub.publish(config.dapr.pubsubName, topicName, eventData);
-      console.log(`[Dapr] Event published to topic: ${topicName}`);
-    } catch (error: any) {
-      console.error(`[Dapr] Failed to publish event to ${topicName}`, {
-        error: error.message,
-        stack: error.stack,
+      logger.info(`[Dapr] Event published to topic: ${topicName}`);
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error(`[Dapr] Failed to publish event to ${topicName}`, {
+        error: err.message,
+        stack: err.stack,
       });
       throw error;
     }

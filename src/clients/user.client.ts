@@ -209,7 +209,7 @@ export class UserClient extends DaprBaseClient {
       recentLimit?: number;
       analyticsPeriod?: string;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = new URLSearchParams();
     if (options?.includeRecent) params.append('includeRecent', 'true');
     if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
@@ -220,7 +220,7 @@ export class UserClient extends DaprBaseClient {
       ? `/api/admin/users/stats?${queryString}`
       : '/api/admin/users/stats';
 
-    return this.get<any>(endpoint, headers);
+    return this.get<unknown>(endpoint, headers);
   }
 }
 

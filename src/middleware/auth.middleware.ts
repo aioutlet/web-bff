@@ -123,7 +123,16 @@ export const requireAuth = async (
       algorithms: [jwtConfig.algorithm as jwt.Algorithm],
       issuer: jwtConfig.issuer,
       audience: jwtConfig.audience,
-    }) as any;
+    }) as jwt.JwtPayload & {
+      sub?: string;
+      id?: string;
+      email?: string;
+      username?: string;
+      name?: string;
+      roles?: string[];
+      isAdmin?: boolean;
+      emailVerified?: boolean;
+    };
 
     // Validate standard claims
     if (!decoded.sub && !decoded.id) {
@@ -142,15 +151,13 @@ export const requireAuth = async (
 
     // Attach user information to request
     req.user = {
-      id: decoded.sub || decoded.id,
-      email: decoded.email,
+      id: decoded.sub || decoded.id || '',
+      email: decoded.email || '',
       username: decoded.username || decoded.name,
       roles: decoded.roles || [],
       isAdmin: (decoded.roles || []).includes('admin') || decoded.isAdmin || false,
       emailVerified: decoded.emailVerified || false,
     };
-
-    // console.log(`[MIDDLEWARE] User authenticated: ${req.user.id}, calling next()`);
 
     // logger.info('User authenticated successfully', {
     //   traceId,
@@ -161,12 +168,13 @@ export const requireAuth = async (
     // });
 
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     const { traceId, spanId } = req;
+    const err = error as Error & { name?: string; message?: string };
 
     // Handle specific JWT errors
-    if (error.name === 'TokenExpiredError') {
-      logger.warn('Token expired', { traceId, spanId, error: error.message });
+    if (err.name === 'TokenExpiredError') {
+      logger.warn('Token expired', { traceId, spanId, error: err.message });
       res.status(401).json({
         success: false,
         error: {
@@ -179,8 +187,8 @@ export const requireAuth = async (
       return;
     }
 
-    if (error.name === 'JsonWebTokenError') {
-      logger.warn('Invalid token', { traceId, spanId, error: error.message });
+    if (err.name === 'JsonWebTokenError') {
+      logger.warn('Invalid token', { traceId, spanId, error: err.message });
       res.status(401).json({
         success: false,
         error: {
@@ -193,8 +201,8 @@ export const requireAuth = async (
       return;
     }
 
-    if (error.name === 'NotBeforeError') {
-      logger.warn('Token not active yet', { traceId, spanId, error: error.message });
+    if (err.name === 'NotBeforeError') {
+      logger.warn('Token not active yet', { traceId, spanId, error: err.message });
       res.status(401).json({
         success: false,
         error: {
@@ -208,7 +216,7 @@ export const requireAuth = async (
     }
 
     // Generic authentication error
-    logger.error('Authentication failed', { traceId, spanId, error });
+    logger.error('Authentication failed', { traceId, spanId, error: err });
     res.status(401).json({
       success: false,
       error: {
@@ -236,7 +244,7 @@ export const optionalAuth = async (
     const token = extractToken(req);
 
     // DEBUG: Log token extraction result
-    console.log('🔐 [optionalAuth] Token extraction:', {
+    logger.debug('[optionalAuth] Token extraction:', {
       hasToken: !!token,
       tokenPreview: token ? `${token.substring(0, 30)}...` : 'NONE',
       authHeader: req.headers.authorization ? 'present' : 'missing',
@@ -245,14 +253,14 @@ export const optionalAuth = async (
 
     if (!token) {
       // No token provided, continue without user
-      console.log('🔐 [optionalAuth] No token, continuing as anonymous');
+      logger.debug('[optionalAuth] No token, continuing as anonymous');
       req.user = undefined;
       return next();
     }
 
     // Get JWT config
     const jwtConfig = await getJwtConfig();
-    console.log('🔐 [optionalAuth] JWT config:', {
+    logger.debug('[optionalAuth] JWT config:', {
       hasSecret: !!jwtConfig.secret,
       algorithm: jwtConfig.algorithm,
       issuer: jwtConfig.issuer,
@@ -264,9 +272,18 @@ export const optionalAuth = async (
       algorithms: [jwtConfig.algorithm as jwt.Algorithm],
       issuer: jwtConfig.issuer,
       audience: jwtConfig.audience,
-    }) as any;
+    }) as jwt.JwtPayload & {
+      sub?: string;
+      id?: string;
+      email?: string;
+      username?: string;
+      name?: string;
+      roles?: string[];
+      isAdmin?: boolean;
+      emailVerified?: boolean;
+    };
 
-    console.log('🔐 [optionalAuth] Token decoded:', {
+    logger.debug('[optionalAuth] Token decoded:', {
       sub: decoded.sub,
       id: decoded.id,
       email: decoded.email,
@@ -276,15 +293,15 @@ export const optionalAuth = async (
     // Attach user information if valid
     if (decoded.sub || decoded.id) {
       req.user = {
-        id: decoded.sub || decoded.id,
-        email: decoded.email,
+        id: decoded.sub || decoded.id || '',
+        email: decoded.email || '',
         username: decoded.username || decoded.name,
         roles: decoded.roles || [],
         isAdmin: (decoded.roles || []).includes('admin') || decoded.isAdmin || false,
         emailVerified: decoded.emailVerified || false,
       };
 
-      console.log('🔐 [optionalAuth] User attached to request:', {
+      logger.debug('[optionalAuth] User attached to request:', {
         userId: req.user.id,
         email: req.user.email,
       });
@@ -297,17 +314,18 @@ export const optionalAuth = async (
     }
 
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Token is invalid, but we don't fail the request
-    console.log('🔐 [optionalAuth] Token verification FAILED:', {
-      errorName: error.name,
-      errorMessage: error.message,
+    const err = error as Error;
+    logger.debug('[optionalAuth] Token verification FAILED:', {
+      errorName: err.name,
+      errorMessage: err.message,
     });
 
     logger.debug('Optional auth: Token invalid, continuing without user', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
     req.user = undefined;

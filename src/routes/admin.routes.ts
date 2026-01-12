@@ -11,8 +11,8 @@ import { requireAuth, requireAdmin } from '@middleware/auth.middleware';
 const router = Router();
 
 // Apply authentication and admin role check to all admin routes
-router.use(requireAuth as any);
-router.use(requireAdmin as any);
+router.use(requireAuth as unknown as RequestHandler);
+router.use(requireAdmin as unknown as RequestHandler);
 
 // Dashboard Routes
 router.get('/dashboard/stats', adminController.getDashboardStats as unknown as RequestHandler);

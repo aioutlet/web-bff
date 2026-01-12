@@ -19,7 +19,7 @@ const getToken = (req: RequestWithTraceContext): string | null => {
 
 const getUserIdFromToken = (token: string): string | null => {
   try {
-    const decoded = jwt.decode(token) as any;
+    const decoded = jwt.decode(token) as { sub?: string; id?: string } | null;
     return decoded?.sub || decoded?.id || null;
   } catch (error) {
     logger.error('Error decoding JWT token', { error });
@@ -95,11 +95,12 @@ export const createOrder = asyncHandler(async (req: RequestWithTraceContext, res
         customerPhone,
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     logger.warn('Failed to fetch user profile, using JWT data only', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
   }
 
@@ -121,7 +122,7 @@ export const createOrder = asyncHandler(async (req: RequestWithTraceContext, res
     headers['X-Correlation-ID'] = req.correlationId;
   }
 
-  console.log('[OrderController] Forwarding headers to order-service:', headers);
+  logger.debug('[OrderController] Forwarding headers to order-service', { headers });
 
   const order = await orderClient.createOrder(orderData, headers);
 
@@ -208,15 +209,16 @@ export const getMyOrdersPaged = async (
       success: true,
       data: pagedOrders,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error & { response?: { status?: number } };
     const { traceId, spanId } = req;
     logger.error('Error fetching user orders (paged)', {
       traceId,
       spanId,
-      error: error.message,
+      error: err.message,
     });
 
-    res.status(error.response?.status || 500).json({
+    res.status(err.response?.status || 500).json({
       success: false,
       error: {
         message: 'Failed to fetch orders',

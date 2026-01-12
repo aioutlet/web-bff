@@ -3,11 +3,11 @@
  * Proxies chat requests to chat-service via Dapr
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { HttpMethod } from '@dapr/dapr';
 import daprClient from '../core/daprClient';
 import config from '../core/config';
-import { withTraceContext } from '../core/logger';
+import logger, { withTraceContext } from '../core/logger';
 import { requireAuth, optionalAuth, RequestWithAuth } from '@middleware/auth.middleware';
 
 const router = Router();
@@ -17,8 +17,7 @@ const router = Router();
  * Send a chat message and get AI response
  * Uses optional auth - can work without login for product queries
  */
-router.post('/message', optionalAuth as any, async (req: Request, res: Response) => {
-  const authReq = req as RequestWithAuth;
+router.post('/message', optionalAuth, async (req: RequestWithAuth, res: Response) => {
   const traceId = (req.headers['x-trace-id'] as string) || '';
   const log = withTraceContext(traceId, '');
 
@@ -34,15 +33,15 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
     }
 
     // DEBUG: Log user context from optionalAuth
-    console.log('💬 [chat.routes] /message endpoint:', {
-      hasUser: !!authReq.user,
-      userId: authReq.user?.id,
-      userEmail: authReq.user?.email,
+    logger.debug('[chat.routes] /message endpoint:', {
+      hasUser: !!req.user,
+      userId: req.user?.id,
+      userEmail: req.user?.email,
       messagePreview: message.substring(0, 50),
     });
 
     log.info('Forwarding chat message to chat-service', {
-      userId: authReq.user?.id,
+      userId: req.user?.id,
       conversationId,
       messageLength: message.length,
     });
@@ -59,20 +58,21 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
         message,
         conversationId,
         context,
-        userId: authReq.user?.id, // Will be undefined if not authenticated
+        userId: req.user?.id, // Will be undefined if not authenticated
         authToken: authHeader, // Pass auth token for downstream service calls
       }
     );
 
     return res.json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     log.error('Failed to process chat message', {
-      error: error.message,
-      stack: error.stack,
+      error: err.message,
+      stack: err.stack,
     });
 
     // Handle specific error cases
-    if (error.message?.includes('ECONNREFUSED') || error.message?.includes('not found')) {
+    if (err.message?.includes('ECONNREFUSED') || err.message?.includes('not found')) {
       return res.status(503).json({
         success: false,
         error: 'Service Unavailable',
@@ -92,8 +92,7 @@ router.post('/message', optionalAuth as any, async (req: Request, res: Response)
  * GET /api/chat/history/:conversationId
  * Get conversation history (requires authentication)
  */
-router.get('/history/:conversationId', requireAuth as any, async (req: Request, res: Response) => {
-  const authReq = req as RequestWithAuth;
+router.get('/history/:conversationId', requireAuth, async (req: RequestWithAuth, res: Response) => {
   const traceId = (req.headers['x-trace-id'] as string) || '';
   const log = withTraceContext(traceId, '');
 
@@ -101,7 +100,7 @@ router.get('/history/:conversationId', requireAuth as any, async (req: Request, 
     const { conversationId } = req.params;
 
     log.info('Fetching chat history', {
-      userId: authReq.user?.id,
+      userId: req.user?.id,
       conversationId,
     });
 
@@ -112,9 +111,10 @@ router.get('/history/:conversationId', requireAuth as any, async (req: Request, 
     );
 
     return res.json(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     log.error('Failed to fetch chat history', {
-      error: error.message,
+      error: err.message,
     });
 
     return res.status(500).json({

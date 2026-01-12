@@ -11,6 +11,17 @@ import logger from '../core/logger';
 import { RequestWithTraceContext } from '@middleware/traceContext.middleware';
 import { getProductReviews } from '@aggregators/product.aggregator';
 
+// Product type for type safety
+interface Product {
+  sku?: string;
+  inventory?: {
+    inStock: boolean;
+    availableQuantity: number;
+    status: string;
+  };
+  [key: string]: unknown;
+}
+
 /**
  * GET /api/products
  * List products with hierarchical filtering
@@ -71,7 +82,9 @@ export const getProducts = asyncHandler(async (req: RequestWithTraceContext, res
   if (products.length > 0) {
     try {
       // Extract SKUs from products
-      const skus = products.map((p: any) => p.sku).filter((sku: string) => sku);
+      const skus = products
+        .map((p: Product) => p.sku)
+        .filter((sku: string | undefined): sku is string => !!sku);
 
       logger.info('Fetching inventory for SKUs', {
         traceId,
@@ -94,7 +107,7 @@ export const getProducts = asyncHandler(async (req: RequestWithTraceContext, res
         const inventoryMap = new Map(inventoryData.map((item) => [item.sku, item]));
 
         // Enrich each product with inventory data
-        products.forEach((product: any) => {
+        products.forEach((product: Product) => {
           const inventory = inventoryMap.get(product.sku);
           if (inventory) {
             product.inventory = {
@@ -196,7 +209,9 @@ export const searchProducts = asyncHandler(async (req: RequestWithTraceContext, 
 
   if (products.length > 0) {
     try {
-      const skus = products.map((p: any) => p.sku).filter((sku: string) => sku);
+      const skus = products
+        .map((p: Product) => p.sku)
+        .filter((sku: string | undefined): sku is string => !!sku);
 
       logger.info('Fetching inventory for search SKUs', {
         traceId,
@@ -215,7 +230,7 @@ export const searchProducts = asyncHandler(async (req: RequestWithTraceContext, 
         });
         const inventoryMap = new Map(inventoryData.map((item) => [item.sku, item]));
 
-        products.forEach((product: any) => {
+        products.forEach((product: Product) => {
           const inventory = inventoryMap.get(product.sku);
           if (inventory) {
             product.inventory = {

@@ -72,7 +72,7 @@ export class OrderClient extends DaprBaseClient {
 
   async getOrdersPaged(
     headers: Record<string, string>,
-    params?: any
+    params?: Record<string, string>
   ): Promise<PagedResponse<Order>> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.get<PagedResponse<Order>>(`/api/admin/orders/paged${queryString}`, headers);
@@ -84,7 +84,7 @@ export class OrderClient extends DaprBaseClient {
 
   async updateOrderStatus(
     orderId: string,
-    data: any,
+    data: Record<string, unknown>,
     headers: Record<string, string>
   ): Promise<Order> {
     return this.put<Order>(`/api/admin/orders/${orderId}/status`, data, headers);
@@ -97,7 +97,7 @@ export class OrderClient extends DaprBaseClient {
   async getDashboardStats(
     headers: Record<string, string>,
     options?: { includeRecent?: boolean; recentLimit?: number }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const params = new URLSearchParams();
     if (options?.includeRecent) params.append('includeRecent', 'true');
     if (options?.recentLimit) params.append('recentLimit', options.recentLimit.toString());
@@ -106,7 +106,7 @@ export class OrderClient extends DaprBaseClient {
     const endpoint = queryString
       ? `/api/admin/orders/stats?${queryString}`
       : '/api/admin/orders/stats';
-    return this.get<any>(endpoint, headers);
+    return this.get<unknown>(endpoint, headers);
   }
 
   // Customer methods
@@ -128,7 +128,7 @@ export class OrderClient extends DaprBaseClient {
   async getMyOrdersPaged(
     customerId: string,
     headers: Record<string, string>,
-    params?: any
+    params?: Record<string, string>
   ): Promise<PagedResponse<Order>> {
     const queryString = params ? '?' + new URLSearchParams(params).toString() : '';
     return this.get<PagedResponse<Order>>(
