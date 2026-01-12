@@ -102,9 +102,9 @@ const validationRules: Record<string, ValidationRule> = {
 
   // CORS Configuration
   ALLOWED_ORIGINS: {
-    required: true,
+    required: false,  // Has default in config.ts
     validator: (value) => {
-      if (!value) return false;
+      if (!value) return true;  // Allow missing, will use default
       const origins = value.split(',').map((o) => o.trim());
       return origins.every((origin) => origin === '*' || isValidUrl(origin));
     },
