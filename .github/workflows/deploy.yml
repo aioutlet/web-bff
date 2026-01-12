@@ -160,7 +160,6 @@ jobs:
       ingress_external: true
       health_probe_path: '/health'
       dapr_enabled: true
-      dapr_app_id: 'web-bff'
       dapr_app_port: 8080
       env_vars: |
         [
@@ -206,7 +205,6 @@ jobs:
       ingress_external: true
       health_probe_path: '/health'
       dapr_enabled: true
-      dapr_app_id: 'web-bff'
       dapr_app_port: 8080
       image_tag: ${{ github.event.inputs.image_tag }}
       env_vars: |
