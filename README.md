@@ -27,7 +27,7 @@ cp .env.example .env
 # JWT_SECRET=your-secret-key-change-in-production
 # AUTH_SERVICE_URL=http://localhost:1004
 # USER_SERVICE_URL=http://localhost:1002
-# PRODUCT_SERVICE_URL=http://localhost:1001
+# PRODUCT_SERVICE_URL=http://localhost:8001
 ```
 
 **3. Initialize Dapr**
