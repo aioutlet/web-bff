@@ -26,7 +26,7 @@ cp .env.example .env
 # Edit .env - update these values:
 # JWT_SECRET=your-secret-key-change-in-production
 # AUTH_SERVICE_URL=http://localhost:1004
-# USER_SERVICE_URL=http://localhost:1002
+# USER_SERVICE_URL=http://localhost:8002
 # PRODUCT_SERVICE_URL=http://localhost:8001
 ```
 
